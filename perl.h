@@ -1070,6 +1070,11 @@ violations are fatal.
 
 #include "perl_langinfo.h"    /* Needed for _NL_LOCALE_NAME */
 
+#ifdef NO_LC_ALL
+#  undef LC_ALL
+#  undef LC_ALL_MASK
+#endif
+
 /* =========================================================================
  * The defines from here to the following ===== line are unfortunately
  * duplicated in makedef.pl, and changes here MUST also be made there */
@@ -1104,21 +1109,33 @@ violations are fatal.
 #   if !defined(NO_LOCALE_COLLATE) && defined(LC_COLLATE) \
        && defined(HAS_STRXFRM)
 #	define USE_LOCALE_COLLATE
+#   else
+#     undef LC_COLLATE
 #   endif
 #   if !defined(NO_LOCALE_CTYPE) && defined(LC_CTYPE)
 #	define USE_LOCALE_CTYPE
+#   else
+#     undef LC_CTYPE
 #   endif
 #   if !defined(NO_LOCALE_NUMERIC) && defined(LC_NUMERIC)
 #	define USE_LOCALE_NUMERIC
+#   else
+#     undef LC_NUMERIC
 #   endif
 #   if !defined(NO_LOCALE_MESSAGES) && defined(LC_MESSAGES)
 #	define USE_LOCALE_MESSAGES
+#   else
+#     undef LC_MESSAGES
 #   endif
 #   if !defined(NO_LOCALE_MONETARY) && defined(LC_MONETARY)
 #	define USE_LOCALE_MONETARY
+#   else
+#     undef LC_MONETARY
 #   endif
 #   if !defined(NO_LOCALE_TIME) && defined(LC_TIME)
 #	define USE_LOCALE_TIME
+#   else
+#     undef LC_TIME
 #   endif
 #   if !defined(NO_LOCALE_ADDRESS) && defined(LC_ADDRESS)
 #	define USE_LOCALE_ADDRESS
