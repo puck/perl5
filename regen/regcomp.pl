@@ -701,18 +701,31 @@ EOP
                 chomp($next_line);
                 $line .= $next_line;
             }
+            if ( $line =~ m!/\*! ) {
+                while ( $line !~ m!\*/!) {
+                    defined(my $next_line= <$in_fh>)
+                        or last;
+                    chomp($next_line);
+                    # strip line starts to turn the comment into a single
+                    # line, including leading * if its there, but not if
+                    # its followed by a / (eg an end comment marker).
+                    $next_line=~s/^\s*(\*(?!\/)\s*)?/ /;
+                    $line .= $next_line;
+                }
+            }
 
             # optional leading '_'.  Return symbol in $1, and strip it from
             # comment of line
             if (
                 $line =~ m/^ \# \s* define \s+ ( PREGf_ ( \w+ ) ) \s+
-                             0x([0-9a-f]+)(?:\s*\/\*(.*)\*\/)?/xi
+                             0x([0-9a-f]+)(?:\s*\/\*(.*?)\*\/)?/xi
             ){
                 my $define= $1;
                 my $abbr= $2;
                 my $hex= $3;
-                my $comment= $4;
+                my $comment= $4 // "";
                 my $val= hex($hex);
+                $comment=~s/\s+/ /g;
                 $comment= $comment ? " - $comment" : "";
 
                 printf $out qq(\t%-30s/* 0x%08x - %s%s */\n), qq("$abbr",),
