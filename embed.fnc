@@ -3473,10 +3473,10 @@ S	|const char *|get_displayable_string|NN const char * const s	\
 #  endif
 #endif
 
+p	|bool	|invoke_exception_hook|NULLOK SV *ex|bool warn
 #if defined(PERL_IN_UTIL_C)
 S	|SV*	|mess_alloc
 S	|SV *	|with_queued_errors|NN SV *ex
-S	|bool	|invoke_exception_hook|NULLOK SV *ex|bool warn
 #  if defined(PERL_MEM_LOG) && !defined(PERL_MEM_LOG_NOIMPL)
 ST	|void	|mem_log_common	|enum mem_log_type mlt|const UV n|const UV typesize \
 				|NN const char *type_name|NULLOK const SV *sv \

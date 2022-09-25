@@ -1825,6 +1825,10 @@ PERL_CALLCONV void	Perl_invmap_dump(pTHX_ SV* invlist, UV * map)
 #define PERL_ARGS_ASSERT_INVMAP_DUMP	\
 	assert(invlist); assert(map)
 
+PERL_CALLCONV bool	Perl_invoke_exception_hook(pTHX_ SV *ex, bool warn)
+			__attribute__visibility__("hidden");
+#define PERL_ARGS_ASSERT_INVOKE_EXCEPTION_HOOK
+
 PERL_CALLCONV bool	Perl_io_close(pTHX_ IO* io, GV *gv, bool is_explicit, bool warn_on_fail)
 			__attribute__visibility__("hidden");
 #define PERL_ARGS_ASSERT_IO_CLOSE	\
@@ -7373,8 +7377,6 @@ PERL_CALLCONV UV	Perl__to_upper_title_latin1(pTHX_ const U8 c, U8 *p, STRLEN *le
 #if defined(PERL_IN_UTIL_C)
 STATIC bool	S_ckwarn_common(pTHX_ U32 w);
 #define PERL_ARGS_ASSERT_CKWARN_COMMON
-STATIC bool	S_invoke_exception_hook(pTHX_ SV *ex, bool warn);
-#define PERL_ARGS_ASSERT_INVOKE_EXCEPTION_HOOK
 STATIC SV*	S_mess_alloc(pTHX);
 #define PERL_ARGS_ASSERT_MESS_ALLOC
 STATIC SV *	S_with_queued_errors(pTHX_ SV *ex);

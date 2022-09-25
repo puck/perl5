@@ -6,7 +6,7 @@ BEGIN {
     set_up_inc('../lib');
 }
 
-plan(tests => 152);
+plan(tests => 157);
 
 eval 'pass();';
 
@@ -728,5 +728,22 @@ pass("eval in freed package does not crash");
         my $sort_line= 'my @x= sort { ' . $line . ' } 1,2;';
         fresh_perl_is($line . ' print "ok";', "A-ok", {}, "No segfault: $line");
 
+    }
+}
+{
+    # test that all of these cases behave the same
+    for my $fragment ('bar', '1+;', '1+;' x 11, 's/', ']') {
+        fresh_perl_is(
+            # code:
+            'use strict; use warnings; $SIG{__DIE__} = sub { die "X" }; ' .
+            'eval { eval "'.$fragment.'"; print "after eval $@"; };' .
+            'if ($@) { print "outer eval $@" }',
+            # wanted:
+            "after eval X at - line 1.",
+            # opts:
+            {},
+            # name:
+            "test that nested eval '$fragment' calls sig die as expected"
+        );
     }
 }

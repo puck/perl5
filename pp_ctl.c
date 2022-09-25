@@ -3737,6 +3737,7 @@ S_doeval_compile(pTHX_ U8 gimme, CV* outside, U32 seq, HV *hh)
          * compilation, so the EVAL CX block has already been popped, and
          * various vars restored */
         if (yystatus != 3) {
+            if (!in_require) invoke_exception_hook(ERRSV,FALSE);
             if (PL_eval_root) {
                 op_free(PL_eval_root);
                 PL_eval_root = NULL;
@@ -3744,6 +3745,10 @@ S_doeval_compile(pTHX_ U8 gimme, CV* outside, U32 seq, HV *hh)
             SP = PL_stack_base + POPMARK;	/* pop original mark */
             cx = CX_CUR();
             assert(CxTYPE(cx) == CXt_EVAL);
+            /* If we are in an eval we need to make sure that $SIG{__DIE__}
+             * handler is invoked so we simulate that part of the
+             * Perl_die_unwind() process. In a require we will croak
+             * so it will happen there. */
             /* pop the CXt_EVAL, and if was a require, croak */
             S_pop_eval_context_maybe_croak(aTHX_ cx, ERRSV, 2);
         }
@@ -3756,6 +3761,7 @@ S_doeval_compile(pTHX_ U8 gimme, CV* outside, U32 seq, HV *hh)
         errsv = ERRSV;
         if (!*(SvPV_nolen_const(errsv)))
             sv_setpvs(errsv, "Compilation error");
+
 
         if (gimme != G_LIST) PUSHs(&PL_sv_undef);
         PUTBACK;
