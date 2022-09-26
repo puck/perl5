@@ -3258,8 +3258,7 @@ PERL_CALLCONV char*	Perl_pv_uni_display(pTHX_ SV *dsv, const U8 *spv, STRLEN len
 #define PERL_ARGS_ASSERT_PV_UNI_DISPLAY	\
 	assert(dsv); assert(spv)
 PERL_CALLCONV void	Perl_qerror(pTHX_ SV* err);
-#define PERL_ARGS_ASSERT_QERROR	\
-	assert(err)
+#define PERL_ARGS_ASSERT_QERROR
 PERL_CALLCONV REGEXP*	Perl_re_compile(pTHX_ SV * const pattern, U32 orig_rx_flags);
 #define PERL_ARGS_ASSERT_RE_COMPILE	\
 	assert(pattern)
