@@ -5659,7 +5659,7 @@ PERL_CALLCONV HV*	Perl_gv_stashsvpvn_cached(pTHX_ SV *namesv, const char* name, 
 
 #endif
 #if defined(PERL_IN_HV_C)
-STATIC void	S_clear_placeholders(pTHX_ HV *hv, U32 items);
+STATIC void	S_clear_placeholders(pTHX_ HV *hv, const U32 placeholders);
 #define PERL_ARGS_ASSERT_CLEAR_PLACEHOLDERS	\
 	assert(hv)
 STATIC void	S_hsplit(pTHX_ HV *hv, STRLEN const oldsize, STRLEN newsize);

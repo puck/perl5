@@ -3004,7 +3004,7 @@ S	|struct xpvhv_aux*|hv_auxinit|NN HV *hv
 Sx	|SV*	|hv_delete_common|NULLOK HV *hv|NULLOK SV *keysv \
 		|NULLOK const char *key|STRLEN klen|int k_flags|I32 d_flags \
 		|U32 hash
-Sx	|void	|clear_placeholders	|NN HV *hv|U32 items
+Sx	|void	|clear_placeholders	|NN HV *hv|const U32 placeholders
 #endif
 
 #if defined(PERL_IN_MG_C)
