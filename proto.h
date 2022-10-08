@@ -7074,7 +7074,7 @@ PERL_STATIC_INLINE regnode*	Perl_regnext(pTHX_ const regnode* p)
 #endif
 
 #ifndef PERL_NO_INLINE_FUNCTIONS
-PERL_STATIC_INLINE regnode*	Perl_regnode_after(pTHX_ const regnode* p, bool varies)
+PERL_STATIC_INLINE regnode*	Perl_regnode_after(pTHX_ const regnode* p, const bool varies)
 			__attribute__warn_unused_result__;
 #define PERL_ARGS_ASSERT_REGNODE_AFTER
 #endif

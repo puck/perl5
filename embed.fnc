@@ -2045,7 +2045,7 @@ Cp	|I32	|regexec_flags	|NN REGEXP *const rx|NN char *stringarg \
 #if defined(PERL_IN_REGEX_ENGINE)
 CipR	|regnode*|regnext	|NULLOK const regnode* p
 CipR	|bool|check_regnode_after	|NULLOK const regnode* p|const STRLEN extra
-CipR	|regnode*|regnode_after	|NULLOK const regnode* p|bool varies
+CipR	|regnode*|regnode_after	|NULLOK const regnode* p|const bool varies
 #endif
 EXp	|SV*|reg_named_buff          |NN REGEXP * const rx|NULLOK SV * const key \
                                  |NULLOK SV * const value|const U32 flags
