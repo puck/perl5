@@ -3400,7 +3400,7 @@ S	|const char*|stdize_locale|const int category			\
 				|NULLOK const char* input_locale	\
 				|NULLOK const char **buf		\
 				|NULLOK Size_t *buf_size		\
-				|line_t caller_line
+				|const line_t caller_line
 Sr	|void	|setlocale_failure_panic_i|const unsigned int cat_index	\
 				|NULLOK const char * current		\
 				|NN const char * failed			\
