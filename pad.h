@@ -110,13 +110,15 @@ struct padname_with_str {
 /* Flags set in the SvIVX field of FAKE namesvs */
 
 #define PAD_FAKELEX_ANON       1    /* the lex is declared in an ANON, or ... */
-#define PAD_FAKELEX_MULTI      2    /* the lex can be instantiated multiple times */
+#define PAD_FAKELEX_MULTI      2    /* the lex can be instantiated
+                                       multiple times */
 
 /* flags for the pad_new() function */
 
 #define padnew_CLONE           1    /* this pad is for a cloned CV */
 #define padnew_SAVE            2    /* save old globals */
-#define padnew_SAVESUB         4    /* also save extra stuff for start of sub */
+#define padnew_SAVESUB         4    /* also save extra stuff
+                                       for start of sub */
 
 /* values for the pad_tidy() function */
 
@@ -131,8 +133,8 @@ typedef enum {
 #define padadd_OUR          0x01    /* our declaration. */
 #define padadd_STATE        0x02    /* state declaration. */
 #define padadd_NO_DUP_CHECK 0x04    /* skip warning on dups. */
-#define padadd_STALEOK      0x08    /* allow stale lexical in active
-                                            * sub, but only one level up */
+#define padadd_STALEOK      0x08    /* allow stale lexical in active sub,
+                                     * but only one level up */
 
 /* ASSERT_CURPAD_LEGAL and ASSERT_CURPAD_ACTIVE respectively
  * determine whether PL_comppad and PL_curpad are consistent
