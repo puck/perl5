@@ -235,43 +235,43 @@ typedef struct hek HEK;
 #define _SV_HEAD_DEBUG
 #endif
 
-struct STRUCT_SV {              /* struct sv { */
+struct STRUCT_SV { /* struct sv { */
     _SV_HEAD(void*);
     _SV_HEAD_UNION;
 };
 
 struct gv {
-    _SV_HEAD(XPVGV*);           /* pointer to xpvgv body */
+    _SV_HEAD(XPVGV*);       /* pointer to xpvgv body */
     _SV_HEAD_UNION;
 };
 
 struct cv {
-    _SV_HEAD(XPVCV*);           /* pointer to xpvcv body */
+    _SV_HEAD(XPVCV*);       /* pointer to xpvcv body */
     _SV_HEAD_UNION;
 };
 
 struct av {
-    _SV_HEAD(XPVAV*);           /* pointer to xpvav body */
+    _SV_HEAD(XPVAV*);       /* pointer to xpvav body */
     _SV_HEAD_UNION;
 };
 
 struct hv {
-    _SV_HEAD(XPVHV*);           /* pointer to xpvhv body */
+    _SV_HEAD(XPVHV*);       /* pointer to xpvhv body */
     _SV_HEAD_UNION;
 };
 
 struct io {
-    _SV_HEAD(XPVIO*);           /* pointer to xpvio body */
+    _SV_HEAD(XPVIO*);       /* pointer to xpvio body */
     _SV_HEAD_UNION;
 };
 
 struct p5rx {
-    _SV_HEAD(struct regexp*);   /* pointer to regexp body */
+    _SV_HEAD(struct regexp*);       /* pointer to regexp body */
     _SV_HEAD_UNION;
 };
 
 struct invlist {
-    _SV_HEAD(XINVLIST*);       /* pointer to xpvinvlist body */
+    _SV_HEAD(XINVLIST*);    /* pointer to xpvinvlist body */
     _SV_HEAD_UNION;
 };
 
@@ -496,23 +496,23 @@ the upgrade if necessary.  See C<L</svtype>>.
 #define xpv_len         xpv_len_u.xpvlenu_len
 
 union _xnvu {
-    NV      xnv_nv;             /* numeric value, if any */
-    HV *    xgv_stash;
-    line_t  xnv_lines;           /* used internally by S_scan_subst() */
-    bool    xnv_bm_tail;        /* an SvVALID (BM) SV has an implicit "\n" */
+    NV      xnv_nv;         /* numeric value, if any */
+    HV      *xgv_stash;
+    line_t  xnv_lines;      /* used internally by S_scan_subst() */
+    bool    xnv_bm_tail;    /* an SvVALID (BM) SV has an implicit "\n" */
 };
 
 union _xivu {
-    IV      xivu_iv;            /* integer value */
+    IV      xivu_iv;        /* integer value */
     UV      xivu_uv;
-    HEK *   xivu_namehek;       /* xpvlv, xpvgv: GvNAME */
-    bool    xivu_eval_seen;     /* used internally by S_scan_subst() */
+    HEK     *xivu_namehek;  /* xpvlv, xpvgv: GvNAME */
+    bool    xivu_eval_seen; /* used internally by S_scan_subst() */
 
 };
 
 union _xmgu {
-    MAGIC*  xmg_magic;          /* linked list of magicalness */
-    STRLEN  xmg_hash_index;     /* used while freeing hash entries */
+    MAGIC   *xmg_magic;     /* linked list of magicalness */
+    STRLEN  xmg_hash_index; /* used while freeing hash entries */
 };
 
 struct xpv {
@@ -553,9 +553,9 @@ struct xpvlv {
     union {
         STRLEN  xlvu_targoff;
         SSize_t xlvu_stargoff;
-    } xlv_targoff_u;
+    }           xlv_targoff_u;
     STRLEN      xlv_targlen;
-    SV*         xlv_targ;
+    SV          *xlv_targ;
     char        xlv_type;       /* k=keys .=pos x=substr v=vec /=join/re
                                  * y=alem/helem/iter t=tie T=tied HE */
     char        xlv_flags;      /* 1 = negative offset 2 = negative
@@ -566,16 +566,16 @@ struct xpvlv {
 
 struct xpvinvlist {
     _XPV_HEAD;
-    IV          prev_index;     /* caches result of previous
-                                   invlist_search() */
-    STRLEN      iterator;       /* Stores where we are in iterating */
-    bool        is_offset;      /* The data structure for all inversion
-                                   lists begins with an element for code
-                                   point U+0000.  If this bool is set, the
-                                   actual list contains that 0; otherwise,
-                                   the list actually begins with the
-                                   following element.  Thus to invert the
-                                   list, merely toggle this flag */
+    IV          prev_index; /* caches result of previous
+                               invlist_search() */
+    STRLEN      iterator;   /* Stores where we are in iterating */
+    bool        is_offset;  /* The data structure for all inversion
+                               lists begins with an element for code
+                               point U+0000.  If this bool is set, the
+                               actual list contains that 0; otherwise,
+                               the list actually begins with the
+                               following element.  Thus to invert the
+                               list, merely toggle this flag */
 };
 
 /* This structure works in 2 ways - regular scalar, or GV with GP */
@@ -626,7 +626,7 @@ struct xpvio {
     _XPV_HEAD;
     union _xivu xiv_u;
     /* ifp and ofp are normally the same, but sockets need separate streams */
-    PerlIO *    xio_ofp;
+    PerlIO      *xio_ofp;
     /* Cray addresses everything by word boundaries (64 bits) and code and
      * data pointers cannot be mixed (which is exactly what Perl_filter_add()
      * tries to do with the dirp), hence the following union trick (as
@@ -636,19 +636,19 @@ struct xpvio {
      * a good place to hang any IO disciplines to.
      */
     union {
-        DIR *   xiou_dirp;      /* for opendir, readdir, etc */
-        void *  xiou_any;       /* for alignment */
-    } xio_dirpu;
+        DIR     *xiou_dirp; /* for opendir, readdir, etc */
+        void    *xiou_any;  /* for alignment */
+    }           xio_dirpu;
     /* IV xio_lines is now in IVX $. */
-    IV          xio_page;       /* $% */
-    IV          xio_page_len;   /* $= */
-    IV          xio_lines_left; /* $- */
-    char *      xio_top_name;   /* $^ */
-    GV *        xio_top_gv;     /* $^ */
-    char *      xio_fmt_name;   /* $~ */
-    GV *        xio_fmt_gv;     /* $~ */
-    char *      xio_bottom_name;/* $^B */
-    GV *        xio_bottom_gv;  /* $^B */
+    IV          xio_page;           /* $% */
+    IV          xio_page_len;       /* $= */
+    IV          xio_lines_left;     /* $- */
+    char        *xio_top_name;      /* $^ */
+    GV          *xio_top_gv;        /* $^ */
+    char        *xio_fmt_name;      /* $~ */
+    GV          *xio_fmt_gv;        /* $~ */
+    char        *xio_bottom_name;   /* $^B */
+    GV          *xio_bottom_gv;     /* $^B */
     char        xio_type;
     U8          xio_flags;
 };
@@ -2486,11 +2486,11 @@ a GV with a pointer to a GP (glob pointer).
 #define CLONEf_JOIN_IN      8
 
 struct clone_params {
-  AV* stashes;
-  UV  flags;
-  PerlInterpreter *proto_perl;
-  PerlInterpreter *new_perl;
-  AV *unreferenced;
+    AV              *stashes;
+    UV              flags;
+    PerlInterpreter *proto_perl;
+    PerlInterpreter *new_perl;
+    AV              *unreferenced;
 };
 
 /* SV_NOSTEAL prevents TEMP buffers being, well, stolen, and saves games
