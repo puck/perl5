@@ -158,7 +158,8 @@ required, but is kept for backwards compatibility.
  * XXX Should really be a Configure probe, with HAS__FUNCTION__
  *     and FUNCTION__ as results.
  * XXX Similarly, a Configure probe for __FILE__ and __LINE__ is needed. */
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || (defined(__SUNPRO_C)) /* C99 or close enough. */
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) ||\
+ (defined(__SUNPRO_C)) /* C99 or close enough. */
 #  define FUNCTION__ __func__
 #  define SAFE_FUNCTION__ __func__
 #elif (defined(__DECC_VER)) /* Tru64 or VMS, and strict C89 being used, but not modern enough cc (in Tru64, -c99 not known, only -std1). */
@@ -485,7 +486,8 @@ Perl_xxx(aTHX_ ...) form for any API calls where it's used.
     Perl_sv_catxmlpvn(aTHX_ dsv, STR_WITH_LEN(str), utf8)
 
 
-#define lex_stuff_pvs(pv,flags) Perl_lex_stuff_pvn(aTHX_ STR_WITH_LEN(pv), flags)
+#define lex_stuff_pvs(pv,flags) \
+    Perl_lex_stuff_pvn(aTHX_ STR_WITH_LEN(pv), flags)
 
 #define get_cvs(str, flags) \
     Perl_get_cvn_flags(aTHX_ STR_WITH_LEN(str), (flags))
@@ -712,7 +714,8 @@ based on the underlying C library functions):
 #define strnNE(s1,s2,l) (strncmp(s1,s2,l) != 0)
 #define strnEQ(s1,s2,l) (strncmp(s1,s2,l) == 0)
 
-#define memEQ(s1,s2,l) (memcmp(((const void *) (s1)), ((const void *) (s2)), l) == 0)
+#define memEQ(s1,s2,l)  \
+    (memcmp(((const void *) (s1)), ((const void *) (s2)), l) == 0)
 #define memNE(s1,s2,l) (! memEQ(s1,s2,l))
 
 /* memEQ and memNE where second comparand is a string constant */
@@ -744,7 +747,8 @@ based on the underlying C library functions):
 #define memGT(s1,s2,l) (memcmp(s1,s2,l) > 0)
 #define memGE(s1,s2,l) (memcmp(s1,s2,l) >= 0)
 
-#define memCHRs(s1,c) ((const char *) memchr(ASSERT_IS_LITERAL(s1) , c, sizeof(s1)-1))
+#define memCHRs(s1,c)   \
+    ((const char *) memchr(ASSERT_IS_LITERAL(s1) , c, sizeof(s1)-1))
 
 /*
  * Character classes.
@@ -1666,7 +1670,8 @@ END_EXTERN_C
 #   define isPUNCT_A(c)  generic_isCC_A_(c, CC_PUNCT_)
 #   define isSPACE_A(c)  generic_isCC_A_(c, CC_SPACE_)
 #   define isWORDCHAR_A(c) generic_isCC_A_(c, CC_WORDCHAR_)
-#   define isXDIGIT_A(c)  generic_isCC_(c, CC_XDIGIT_) /* No non-ASCII xdigits */
+#   define isXDIGIT_A(c)  generic_isCC_(c, CC_XDIGIT_) /* No non-ASCII
+                                                          xdigits */
 #   define isIDFIRST_A(c) generic_isCC_A_(c, CC_IDFIRST_)
 #   define isALPHA_L1(c)  generic_isCC_(c, CC_ALPHA_)
 #   define isALPHANUMERIC_L1(c) generic_isCC_(c, CC_ALPHANUMERIC_)
@@ -2204,11 +2209,13 @@ END_EXTERN_C
 #define isPRINT_uvchr(c)      generic_invlist_uvchr_(CC_PRINT_, c)
 
 #define isPUNCT_uvchr(c)      generic_invlist_uvchr_(CC_PUNCT_, c)
-#define isSPACE_uvchr(c)      generic_uvchr_(CC_SPACE_, is_XPERLSPACE_cp_high, c)
+#define isSPACE_uvchr(c)    \
+    generic_uvchr_(CC_SPACE_, is_XPERLSPACE_cp_high, c)
 #define isPSXSPC_uvchr(c)     isSPACE_uvchr(c)
 
 #define isUPPER_uvchr(c)      generic_invlist_uvchr_(CC_UPPER_, c)
-#define isVERTWS_uvchr(c)     generic_uvchr_(CC_VERTSPACE_, is_VERTWS_cp_high, c)
+#define isVERTWS_uvchr(c)   \
+    generic_uvchr_(CC_VERTSPACE_, is_VERTWS_cp_high, c)
 #define isWORDCHAR_uvchr(c)   generic_invlist_uvchr_(CC_WORDCHAR_, c)
 #define isXDIGIT_uvchr(c)     generic_uvchr_(CC_XDIGIT_, is_XDIGIT_cp_high, c)
 
@@ -2749,7 +2756,8 @@ PoisonWith(0xEF) for catching access to freed memory.
 
 #define MEM_SIZE_MAX ((MEM_SIZE)-1)
 
-#define _PERL_STRLEN_ROUNDUP_UNCHECKED(n) (((n) - 1 + PERL_STRLEN_ROUNDUP_QUANTUM) & ~((MEM_SIZE)PERL_STRLEN_ROUNDUP_QUANTUM - 1))
+#define _PERL_STRLEN_ROUNDUP_UNCHECKED(n)   \
+    (((n) - 1 + PERL_STRLEN_ROUNDUP_QUANTUM) & ~((MEM_SIZE)PERL_STRLEN_ROUNDUP_QUANTUM - 1))
 
 #ifdef PERL_MALLOC_WRAP
 
@@ -2803,7 +2811,8 @@ PoisonWith(0xEF) for catching access to freed memory.
 
 #  define MEM_WRAP_CHECK_(n,t) MEM_WRAP_CHECK(n,t),
 
-#  define PERL_STRLEN_ROUNDUP(n) ((void)(((n) > MEM_SIZE_MAX - 2 * PERL_STRLEN_ROUNDUP_QUANTUM) ? (croak_memory_wrap(),0) : 0), _PERL_STRLEN_ROUNDUP_UNCHECKED(n))
+#  define PERL_STRLEN_ROUNDUP(n)    \
+       ((void)(((n) > MEM_SIZE_MAX - 2 * PERL_STRLEN_ROUNDUP_QUANTUM) ? (croak_memory_wrap(),0) : 0), _PERL_STRLEN_ROUNDUP_UNCHECKED(n))
 #else
 
 #  define MEM_WRAP_CHECK(n,t)
@@ -2863,9 +2872,12 @@ enum mem_log_type {
 #endif
 
 #ifdef PERL_MEM_LOG
-#define MEM_LOG_ALLOC(n,t,a)     Perl_mem_log_alloc(n,sizeof(t),STRINGIFY(t),a,__FILE__,__LINE__,FUNCTION__)
-#define MEM_LOG_REALLOC(n,t,v,a) Perl_mem_log_realloc(n,sizeof(t),STRINGIFY(t),v,a,__FILE__,__LINE__,FUNCTION__)
-#define MEM_LOG_FREE(a)          Perl_mem_log_free(a,__FILE__,__LINE__,FUNCTION__)
+#define MEM_LOG_ALLOC(n,t,a)    \
+    Perl_mem_log_alloc(n,sizeof(t),STRINGIFY(t),a,__FILE__,__LINE__,FUNCTION__)
+#define MEM_LOG_REALLOC(n,t,v,a)    \
+    Perl_mem_log_realloc(n,sizeof(t),STRINGIFY(t),v,a,__FILE__,__LINE__,FUNCTION__)
+#define MEM_LOG_FREE(a) \
+    Perl_mem_log_free(a,__FILE__,__LINE__,FUNCTION__)
 #endif
 
 #ifndef MEM_LOG_ALLOC
@@ -2878,9 +2890,12 @@ enum mem_log_type {
 #define MEM_LOG_FREE(a)          (a)
 #endif
 
-#define Newx(v,n,t)     (v = (MEM_WRAP_CHECK_(n,t) (t*)MEM_LOG_ALLOC(n,t,safemalloc((MEM_SIZE)((n)*sizeof(t))))))
-#define Newxc(v,n,t,c)  (v = (MEM_WRAP_CHECK_(n,t) (c*)MEM_LOG_ALLOC(n,t,safemalloc((MEM_SIZE)((n)*sizeof(t))))))
-#define Newxz(v,n,t)    (v = (MEM_WRAP_CHECK_(n,t) (t*)MEM_LOG_ALLOC(n,t,safecalloc((n),sizeof(t)))))
+#define Newx(v,n,t) \
+    (v = (MEM_WRAP_CHECK_(n,t) (t*)MEM_LOG_ALLOC(n,t,safemalloc((MEM_SIZE)((n)*sizeof(t))))))
+#define Newxc(v,n,t,c)  \
+    (v = (MEM_WRAP_CHECK_(n,t) (c*)MEM_LOG_ALLOC(n,t,safemalloc((MEM_SIZE)((n)*sizeof(t))))))
+#define Newxz(v,n,t)    \
+    (v = (MEM_WRAP_CHECK_(n,t) (t*)MEM_LOG_ALLOC(n,t,safecalloc((n),sizeof(t)))))
 
 #ifndef PERL_CORE
 /* pre 5.9.x compatibility */
@@ -2907,16 +2922,23 @@ enum mem_log_type {
 #define perl_assert_ptr(p) assert( ((void*)(p)) != 0 )
 
 
-#define Move(s,d,n,t)   (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), (void)memmove((char*)(d),(const char*)(s), (n) * sizeof(t)))
-#define Copy(s,d,n,t)   (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), (void)memcpy((char*)(d),(const char*)(s), (n) * sizeof(t)))
-#define Zero(d,n,t)     (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), (void)memzero((char*)(d), (n) * sizeof(t)))
+#define Move(s,d,n,t)   \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), (void)memmove((char*)(d),(const char*)(s), (n) * sizeof(t)))
+#define Copy(s,d,n,t)   \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), (void)memcpy((char*)(d),(const char*)(s), (n) * sizeof(t)))
+#define Zero(d,n,t) \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), (void)memzero((char*)(d), (n) * sizeof(t)))
 
 /* Like above, but returns a pointer to 'd' */
-#define MoveD(s,d,n,t)  (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), memmove((char*)(d),(const char*)(s), (n) * sizeof(t)))
-#define CopyD(s,d,n,t)  (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), memcpy((char*)(d),(const char*)(s), (n) * sizeof(t)))
-#define ZeroD(d,n,t)    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), memzero((char*)(d), (n) * sizeof(t)))
+#define MoveD(s,d,n,t)  \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), memmove((char*)(d),(const char*)(s), (n) * sizeof(t)))
+#define CopyD(s,d,n,t)  \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), perl_assert_ptr(s), memcpy((char*)(d),(const char*)(s), (n) * sizeof(t)))
+#define ZeroD(d,n,t)    \
+    (MEM_WRAP_CHECK_(n,t) perl_assert_ptr(d), memzero((char*)(d), (n) * sizeof(t)))
 
-#define PoisonWith(d,n,t,b)     (MEM_WRAP_CHECK_(n,t) (void)memset((char*)(d), (U8)(b), (n) * sizeof(t)))
+#define PoisonWith(d,n,t,b) \
+    (MEM_WRAP_CHECK_(n,t) (void)memset((char*)(d), (U8)(b), (n) * sizeof(t)))
 #define PoisonNew(d,n,t)        PoisonWith(d,n,t,0xAB)
 #define PoisonFree(d,n,t)       PoisonWith(d,n,t,0xEF)
 #define Poison(d,n,t)           PoisonFree(d,n,t)

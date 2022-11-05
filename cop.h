@@ -549,7 +549,8 @@ typedef struct rcpv RCPV;
 
 #define RCPVf_USE_STRLEN 1
 #define RCPVf_NO_COPY 2
-#define RCPVx(pv_arg)       ((RCPV *)((pv_arg) - STRUCT_OFFSET(struct rcpv, pv)))
+#define RCPVx(pv_arg)   \
+    ((RCPV *)((pv_arg) - STRUCT_OFFSET(struct rcpv, pv)))
 #define RCPV_REFCOUNT(pv)   (RCPVx(pv)->refcount)
 #define RCPV_LEN(pv)        (RCPVx(pv)->len)
 
@@ -561,10 +562,12 @@ typedef struct rcpv RCPV;
        (CopFILE(c)      \
         ? gv_fetchfile(CopFILE(c)) : NULL)
 
-#  define CopFILE_set_x(c,pv)       ((c)->cop_file = rcpv_new((pv),0,RCPVf_USE_STRLEN))
+#  define CopFILE_set_x(c,pv)   \
+       ((c)->cop_file = rcpv_new((pv),0,RCPVf_USE_STRLEN))
 #  define CopFILE_setn_x(c,pv,l)    ((c)->cop_file = rcpv_new((pv),(l),0))
 #  define CopFILE_free_x(c)         ((c)->cop_file = rcpv_free((c)->cop_file))
-#  define CopFILE_copy_x(dst,src)   ((dst)->cop_file = rcpv_copy((src)->cop_file))
+#  define CopFILE_copy_x(dst,src)   \
+       ((dst)->cop_file = rcpv_copy((src)->cop_file))
 
 /* change condition to 1 && to enable this debugging */
 #  define CopFILE_debug(c,t,rk)                     \
@@ -625,7 +628,8 @@ typedef struct rcpv RCPV;
 #  define CopFILEGV_set(c,gv)   ((c)->cop_filegv = (GV*)SvREFCNT_inc(gv))
 #  define CopFILE_set(c,pv)     CopFILEGV_set((c), gv_fetchfile(pv))
 #  define CopFILE_copy(dst,src) CopFILEGV_set((dst),CopFILEGV(src))
-#  define CopFILE_setn(c,pv,l)  CopFILEGV_set((c), gv_fetchfile_flags((pv),(l),0))
+#  define CopFILE_setn(c,pv,l)  \
+       CopFILEGV_set((c), gv_fetchfile_flags((pv),(l),0))
 #  define CopFILESV(c)          (CopFILEGV(c) ? GvSV(CopFILEGV(c)) : NULL)
 #  define CopFILEAV(c)          (CopFILEGV(c) ? GvAV(CopFILEGV(c)) : NULL)
 #  ifdef DEBUGGING
@@ -642,7 +646,8 @@ typedef struct rcpv RCPV;
            ? GvNAMELEN(CopFILEGV(c))-2 : 0)
 #  define CopSTASH(c)           ((c)->cop_stash)
 #  define CopSTASH_set(c,hv)    ((c)->cop_stash = (hv))
-#  define CopFILE_free(c)       (SvREFCNT_dec(CopFILEGV(c)),(CopFILEGV(c) = NULL))
+#  define CopFILE_free(c)   \
+       (SvREFCNT_dec(CopFILEGV(c)),(CopFILEGV(c) = NULL))
 
 #endif /* USE_ITHREADS */
 
@@ -654,7 +659,8 @@ typedef struct rcpv RCPV;
 #define CopHINTHASH_get(c)      ((COPHH*)((c)->cop_hints_hash))
 #define CopHINTHASH_set(c,h)    ((c)->cop_hints_hash = (h))
 
-#define CopFEATURES_setfrom(dst, src) ((dst)->cop_features = (src)->cop_features)
+#define CopFEATURES_setfrom(dst, src)   \
+    ((dst)->cop_features = (src)->cop_features)
 
 /*
 =for apidoc   Am|SV *|cop_hints_fetch_pv |const COP *cop|const char *key              |U32 hash|U32 flags
@@ -775,7 +781,8 @@ by setting C<*flags> to 0 or C<SVf_UTF8>.
 
 #define CopLABEL(c)  Perl_cop_fetch_label(aTHX_ (c), NULL, NULL)
 #define CopLABEL_len(c,len)  Perl_cop_fetch_label(aTHX_ (c), len, NULL)
-#define CopLABEL_len_flags(c,len,flags)  Perl_cop_fetch_label(aTHX_ (c), len, flags)
+#define CopLABEL_len_flags(c,len,flags) \
+    Perl_cop_fetch_label(aTHX_ (c), len, flags)
 #define CopLABEL_alloc(pv)      ((pv)?savepv(pv):NULL)
 
 #define CopSTASH_ne(c,hv)       (!CopSTASH_eq(c,hv))
@@ -933,7 +940,8 @@ struct block_loop {
 
 #define CxLABEL(c)      (CopLABEL((c)->blk_oldcop))
 #define CxLABEL_len(c,len)      (CopLABEL_len((c)->blk_oldcop, len))
-#define CxLABEL_len_flags(c,len,flags)  ((const char *)CopLABEL_len_flags((c)->blk_oldcop, len, flags))
+#define CxLABEL_len_flags(c,len,flags)  \
+    ((const char *)CopLABEL_len_flags((c)->blk_oldcop, len, flags))
 #define CxHASARGS(c)    (((c)->cx_type & CXp_HASARGS) == CXp_HASARGS)
 
 /* CxLVAL(): the lval flags of the call site: the relevant flag bits from
