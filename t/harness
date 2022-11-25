@@ -10,7 +10,7 @@ BEGIN {
 
 my %must_be_executed_serially =
     map { $_ => 1 } (
-                     '../cpan/IO-Zlib/t',
+                     #'../cpan/IO-Zlib/t',
                      '../ext/File-Find/t',
                      '../lib/DBM_Filter/t',  # Multiple test files in this
                                              # directory use the same
