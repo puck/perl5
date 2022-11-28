@@ -3436,6 +3436,10 @@ S	|const char*|update_PL_curlocales_i|const unsigned int index	\
 				    |NN const char * new_locale		\
 				    |recalc_lc_all_t recalc_LC_ALL
 #      endif
+#      ifdef USE_QUERYLOCALE
+S	|const char *|querylocale_l |const unsigned int index		\
+				    |const locale_t locale_obj
+#      endif
 #    else
 #      if   defined(USE_LOCALE_THREADS)					\
        && ! defined(USE_THREAD_SAFE_LOCALE)				\

@@ -1360,6 +1360,33 @@ S_update_PL_curlocales_i(pTHX_
 }
 
 #  endif  /* Need PL_curlocales[] */
+#  ifdef USE_QUERYLOCALE
+#    define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
+
+STATIC const char *
+S_querylocale_l(pTHX_ const unsigned int index, const locale_t locale_obj)
+{
+    PERL_ARGS_ASSERT_QUERYLOCALE_L;
+    assert(isSINGLE_BIT_SET(category_masks[index]));
+
+#    if ! defined(HAS_QUERYLOCALE) && defined(_NL_LOCALE_NAME)
+
+     return mortalized_pv_copy(nl_langinfo_l(_NL_LOCALE_NAME(categories[index]),
+                                                             locale_obj));
+#    else
+
+    gwLOCALE_LOCK;
+    const char * result = mortalized_pv_copy(querylocale(category_masks[index],
+                                                         locale_obj));
+    gwLOCALE_UNLOCK;
+
+    return result;
+
+#    endif
+
+}
+
+#  endif
 
 STATIC const char *
 S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)

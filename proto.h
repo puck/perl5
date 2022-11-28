@@ -5774,6 +5774,10 @@ STATIC const char *	S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale,
 	assert(locale)
 STATIC locale_t	S_use_curlocale_scratch(pTHX);
 #define PERL_ARGS_ASSERT_USE_CURLOCALE_SCRATCH
+#      if defined(USE_QUERYLOCALE)
+STATIC const char *	S_querylocale_l(pTHX_ const unsigned int index, const locale_t locale_obj);
+#define PERL_ARGS_ASSERT_QUERYLOCALE_L
+#      endif
 #    endif
 #    if defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE)
 STATIC const char *	S_calculate_LC_ALL(pTHX_ const locale_t cur_obj);
