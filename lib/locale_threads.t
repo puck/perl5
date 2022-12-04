@@ -456,9 +456,9 @@ sub sort_by_hashed_locale {
     return sort_locales;
 }
 
-my $thread_count = 1000;
+my $thread_count = 50; #00;
 #my $thread_count = $^O =~ /linux/i ? 50 : 10;
-my $iterations = 2;
+my $iterations = 100;
 #$iterations = 50 if $^O =~ /MSWin32/i;
 my $max_result_length = 10000;
 
