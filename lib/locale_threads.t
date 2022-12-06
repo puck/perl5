@@ -465,7 +465,7 @@ my $max_result_length = 10000;
 # Estimate as to how long in seconds to allow a thread to be ready to roll
 # after creation, so as to try to get all the threads to start as
 # simultaneously as possible
-my $per_thread_startup = .06;
+my $per_thread_startup = .18;
 
 # For use in experimentally tuning the above value
 my $die_on_negative_sleep = 1; #1;
@@ -1393,8 +1393,8 @@ SKIP: {
             # Sleep until the time when all the threads are due to wake up, so
             # they run as simultaneously as we can make it.
             my \$sleep_time = (\$starting_time - time());
-            printf STDERR \"thread %d started, sleeping %g sec\\n\",
-                          threads->tid, \$sleep_time;
+            #printf STDERR \"thread %d started, sleeping %g sec\\n\",
+            #              threads->tid, \$sleep_time;
             if (\$sleep_time < 0) {
                 if ($die_on_negative_sleep) {
                     printf STDERR '\\\$per_thread_startup would need to be '
@@ -1468,12 +1468,12 @@ SKIP: {
                     exit;
                 }
 
-                # Update the running status
+                # Update the status
                 \$result &= \$thread_result;
-
-                # Let the other threads run
-                threads->yield();
             }
+
+            # Let the other threads run
+            threads->yield();
 
           # And repeat as long as there are other tests
         } while (threads->list(threads::running));
