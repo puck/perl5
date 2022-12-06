@@ -2671,13 +2671,12 @@ S_wrap_wsetlocale(pTHX_ const int category, const char *locale)
         return NULL;
     }
 
-    const char * result = (const char *) Win_wstring_to_utf8_string(wresult);
+    const char * result = Win_wstring_to_utf8_string(wresult);
     WSETLOCALE_UNLOCK;
-    const char * retval = save_to_buffer(result,
-                                         &PL_win32setlocale_buf,
-                                         &PL_win32setlocale_bufsize);
-    Safefree result;
-    return retval;
+
+    SAVEFREEPV(result); /* is there something better we can do here? */
+
+    return result;
 }
 
 STATIC const char *
@@ -2713,7 +2712,7 @@ S_win32_setlocale(pTHX_ int category, const char* locale)
 
 #  ifdef USE_PL_CUR_LC_ALL
 
-    /* If we need to keep track of LC_ALL, update it to the new value. */
+    /* If we need to keep track of LC_ALL, update it to the new value.  */
     Safefree(PL_cur_LC_ALL);
     if (category == LC_ALL) {
         PL_cur_LC_ALL = savepv(result);
@@ -5496,7 +5495,6 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
                                                   &PL_stdize_locale_buf,
                                                   &PL_stdize_locale_bufsize,
                                                   __LINE__);
-                Safefree(raw_system_default_locale);
                 DEBUG_LOCALE_INIT(LC_ALL_INDEX_, "", system_default_locale);
 
                 /* Skip if invalid or if it's already on the list of locales to
