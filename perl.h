@@ -7078,7 +7078,7 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
      */
 #  define LOCALE_LOCK_(cond_to_panic_if_already_locked)                     \
         STMT_START {                                                        \
-            CLANG_DIAG_IGNORE(-Wthread-safety)	     	                    \
+            CLANG_DIAG_IGNORE(-Wthread-safety)                              \
             if (LIKELY(PL_locale_mutex_depth <= 0)) {                       \
                 DEBUG_Lv(PerlIO_printf(Perl_debug_log,                      \
                          "%s: %d: locking locale; depth=1\n",               \
@@ -7104,9 +7104,9 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 
 #  define LOCALE_UNLOCK_                                                    \
         STMT_START {                                                        \
-            DEBUG_Lv(PerlIO_printf(Perl_debug_log,                      \
-                        "%s: %d: Trying to unlock locale\n",               \
-                        __FILE__, __LINE__));                              \
+            DEBUG_Lv(PerlIO_printf(Perl_debug_log,                          \
+                        "%s: %d: Trying to unlock locale\n",                \
+                        __FILE__, __LINE__));                               \
             if (LIKELY(PL_locale_mutex_depth == 1)) {                       \
                 DEBUG_Lv(PerlIO_printf(Perl_debug_log,                      \
                          "%s: %d: unlocking locale; new depth=0\n",         \
