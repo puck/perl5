@@ -833,16 +833,16 @@ S_my_querylocale_i(pTHX_ const unsigned int index)
      * index into our parallel tables of them.
      *
      * POSIX 2008, for some sick reason, chose not to provide a method to find
-     * the category name of a locale, discarding a basic linguistic tenet that
-     * for any object, people will create a name for it.  Some vendors have
-     * created a querylocale() function to do just that.  This function is a
-     * lot simpler to implement on systems that have this.  Otherwise, we have
-     * to keep track of what the locale has been set to, so that we can return
-     * its name so as to emulate setlocale().  It's also possible for C code in
-     * some library to change the locale without us knowing it, though as of
-     * September 2017, there are no occurrences in CPAN of uselocale().  Some
-     * libraries do use setlocale(), but that changes the global locale, and
-     * threads using per-thread locales will just ignore those changes. */
+     * the category name of a locale, disregarding a basic linguistic tenet
+     * that for any object, people will create a name for it.  Some vendors
+     * have created a querylocale() function to do just that.  This function is
+     * a lot simpler to implement on systems that have this.  Otherwise, we
+     * have to keep track of what the locale has been set to, so that we can
+     * return its name so as to emulate setlocale().  It's also possible for C
+     * code in some library to change the locale without us knowing it, though
+     * as of September 2017, there are no occurrences in CPAN of uselocale().
+     * Some libraries do use setlocale(), but that changes the global locale,
+     * and threads using per-thread locales will just ignore those changes. */
 
     int category;
     const locale_t cur_obj = uselocale((locale_t) 0);
@@ -1075,7 +1075,7 @@ S_setlocale_from_aggregate_LC_ALL(pTHX_ const char * locale, const line_t line)
     const char * retval = savepv(calculate_LC_ALL(PL_curlocales));
     Safefree(PL_curlocales[LC_ALL_INDEX_]);
     PL_curlocales[LC_ALL_INDEX_] = retval;
-        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
+    DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
 
 #    else
 
@@ -2023,8 +2023,7 @@ Perl_set_numeric_standard(pTHX)
 
 #  ifdef USE_LOCALE_NUMERIC
 
-    /* Unconditionally toggle the LC_NUMERIC locale to the current underlying
-     * default.
+    /* Unconditionally toggle the LC_NUMERIC locale to the C locale
      *
      * Most code should use the macro SET_NUMERIC_STANDARD() in perl.h
      * instead of calling this directly.  The macro avoids calling this routine
@@ -6552,7 +6551,7 @@ S_restore_toggled_locale_i(pTHX_ const unsigned int cat_index,
                                  const char * restore_locale,
                                  const line_t caller_line)
 {
-    /* Restores the locale for LC_category corresponding to cat_indes to
+    /* Restores the locale for LC_category corresponding to cat_index to
      * 'restore_locale' (which is a copy that will be freed by this function),
      * or do nothing if the latter parameter is NULL */
 
