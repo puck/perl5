@@ -171,6 +171,7 @@
 #define PL_lastgotoprobe	(vTHX->Ilastgotoprobe)
 #define PL_laststatval		(vTHX->Ilaststatval)
 #define PL_laststype		(vTHX->Ilaststype)
+#define PL_libc_char_fcn_result	(vTHX->Ilibc_char_fcn_result)
 #define PL_locale_mutex_depth	(vTHX->Ilocale_mutex_depth)
 #define PL_localizing		(vTHX->Ilocalizing)
 #define PL_localpatches		(vTHX->Ilocalpatches)

@@ -756,6 +756,7 @@ PERLVARI(I, cur_LC_ALL, const char *, NULL)
 #ifdef USE_THREAD_SAFE_LOCALE_EMULATION
 PERLVARA(I, restore_locale, PERL_LOCALE_CATEGORIES_COUNT_, const char *)
 PERLVARA(I, restore_locale_depth, PERL_LOCALE_CATEGORIES_COUNT_, Size_t)
+/*PERLVAR(I,  libc_char_fcn_result, int)       / * Scratch pad */
 #endif
 
 PERLVARI(I, perl_controls_locale, bool, true)
