@@ -5465,6 +5465,17 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
 #  endif
 #  ifdef USE_PL_CURLOCALES
 
+#    ifdef USE_POSIX_2008_LOCALE
+
+    /* Make sure is in the global locale (as this can be called from embedded
+     * perls).  */
+    locale_t entry_locale = uselocale(LC_GLOBAL_LOCALE);
+    if (entry_locale != LC_GLOBAL_LOCALE) {
+        freelocale(entry_locale);
+    }
+
+#    endif
+
     /* Initialize our records. */
     for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
 
