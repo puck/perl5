@@ -782,6 +782,8 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
                                                        locale));
     STDIZED_SETLOCALE_UNLOCK;
 
+    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "set %s to %s\n", category_names[cat_index], new_locale));
+
     if (new_locale == NULL) {
         if (ret_type == WANT_VOID) {
             setlocale_failure_panic_i(cat_index,
@@ -792,6 +794,9 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
         }
 
         return NULL;
+    }
+    else if (strNE(locale, new_locale)) {
+        DEBUG_L(PerlIO_printf(Perl_debug_log, "%s NOT EQUAL %s vs %s\n", category_names[cat_index], locale, new_locale));
     }
 
 #    ifdef LC_ALL
@@ -4499,6 +4504,14 @@ S_my_langinfo_i(pTHX_
      * for both save and restore. */
     const char * orig_CTYPE_locale = toggle_locale_c(LC_CTYPE, locale);
 
+#      ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+
+        if (strchr(locale, ';')) {
+            locale_panic_(Perl_form(aTHX_ "%s: %d: trying to set %s to %s\n",
+            __FILE__, __LINE__, category_names[cat_index], locale));
+        }
+
+#      endif
 #    endif
 
     const char * orig_switched_locale = toggle_locale_i(cat_index, locale);
@@ -7208,6 +7221,9 @@ Perl_category_lock_i(pTHX_ unsigned int cat_index, const char * file, const line
 
         /* What locale we're supposed to be in */
         const char * wanted = PL_curlocales[cat_index];
+        if (strchr(wanted, ';')) {
+            locale_panic_(Perl_form(aTHX_ "%s: %d: trying to set %s to %s\n", file, line, category_names[cat_index], wanted));
+        }
 
         /* What locale we're really in */
         const char * currently;
