@@ -3455,6 +3455,9 @@ S	|void	|less_dicey_void_setlocale_i				\
 				|const line_t line
 #      endif
 #    endif
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+S	|const char*|native_query_LC_ALL
+#endif
 #    if defined(WIN32) || (     defined(USE_POSIX_2008_LOCALE)   \
                            && ! defined(USE_QUERYLOCALE))
 S	|const char *|find_locale_from_environment|const unsigned int index

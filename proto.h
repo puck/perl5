@@ -5779,6 +5779,10 @@ STATIC locale_t	S_use_curlocale_scratch(pTHX);
 STATIC const char *	S_calculate_LC_ALL(pTHX_ const locale_t cur_obj);
 #define PERL_ARGS_ASSERT_CALCULATE_LC_ALL
 #    endif
+#    if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+STATIC const char*	S_native_query_LC_ALL(pTHX);
+#define PERL_ARGS_ASSERT_NATIVE_QUERY_LC_ALL
+#    endif
 #    if defined(WIN32)
 STATIC wchar_t *	S_Win_byte_string_to_wstring(const UINT code_page, const char * byte_string);
 #define PERL_ARGS_ASSERT_WIN_BYTE_STRING_TO_WSTRING

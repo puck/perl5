@@ -477,6 +477,9 @@ unless ($define{USE_THREAD_SAFE_LOCALE_EMULATION})
         PL_is_thread_locale
         Perl_category_lock_i
         Perl_category_unlock_i
+        PL_LC_ALL_positions
+        PL_LC_ALL_separator_string
+        PL_LC_ALL_separator_string_len
     );
 }
 

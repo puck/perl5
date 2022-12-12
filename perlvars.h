@@ -107,6 +107,11 @@ PERLVAR(G, locale_mutex, perl_mutex)   /* Mutex related to locale handling */
 #ifdef USE_POSIX_2008_LOCALE
 PERLVARI(G, C_locale_obj, locale_t, NULL)
 #endif
+#ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+PERLVARI(G, LC_ALL_separator_string, char *, NULL)
+PERLVARI(G, LC_ALL_separator_string_len, unsigned int, 0)
+PERLVARA(G, LC_ALL_positions, PERL_LOCALE_CATEGORIES_COUNT_, int)
+#endif
 
 PERLVARI(G, watch_pvx,	char *, NULL)
 

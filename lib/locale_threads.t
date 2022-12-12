@@ -744,7 +744,10 @@ SKIP: {
 
         if ($category eq 'LC_COLLATE') {
             add_trials('LC_COLLATE',
-                       'quotemeta join "", sort reverse map { chr } (0..255)');
+                       # 'reverse' causes it to be definitely out of order for
+                       # the 'sort' to correct
+                       #'quotemeta join "", sort reverse map { chr } (0..255)');
+                       'quotemeta join "", sort reverse map { chr } (1..255)');
 
             # We pass an re to exclude testing locales that don't necessarily
             # have a lt b.

@@ -1247,8 +1247,9 @@ violations are fatal.
 #  else
 #    define PERL_DUMMY_TOD_             PERL_DUMMY_SYNTAX_
 #  endif
+#  define PERL_LOCALE_CATEGORIES_COUNT_ PERL_DUMMY_TOD_ + 1
 #  ifdef LC_ALL
-#    define LC_ALL_INDEX_               PERL_DUMMY_TOD_ + 1
+#    define LC_ALL_INDEX_               PERL_LOCALE_CATEGORIES_COUNT_
 #  endif
 
 
@@ -1271,7 +1272,9 @@ violations are fatal.
     * forbidden.  Availability is when we are using POSIX 2008 locales, or
     * Windows for quite a few releases now. */
 #  if defined(USE_LOCALE_THREADS) && ! defined(NO_THREAD_SAFE_LOCALE)
-#    if defined(USE_POSIX_2008_LOCALE) || (defined(WIN32) && defined(_MSC_VER))
+#    if  defined(USE_POSIX_2008_LOCALE)                                     \
+     ||  defined(__MINGW32__) || defined(__MINGW64__)                       \
+     || (defined(WIN32) && defined(_MSC_VER))
 #      define USE_THREAD_SAFE_LOCALE
 #    else
 #      define USE_THREAD_SAFE_LOCALE_EMULATION
@@ -7160,11 +7163,20 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
                         }                                                   \
                     } STMT_END
 #  endif
-
+#  ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+#    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_                       \
+                                STMT_START {                                \
+                                    Safefree(PL_LC_ALL_separator_string);   \
+                                    PL_LC_ALL_separator_string = NULL;      \
+                                } STMT_END
+#  else
+#    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_  NOOP
+#  endif
 #  define LOCALE_INIT           MUTEX_INIT(&PL_locale_mutex)
-#  define LOCALE_TERM           STMT_START {                                \
-                                    LOCALE_TERM_POSIX_2008_;                \
-                                    MUTEX_DESTROY(&PL_locale_mutex);        \
+#  define LOCALE_TERM           STMT_START {                                  \
+                                    LOCALE_TERM_POSIX_2008_;                  \
+                                    LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_;\
+                                    MUTEX_DESTROY(&PL_locale_mutex);          \
                                 } STMT_END
 #endif
 

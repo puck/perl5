@@ -1805,6 +1805,9 @@
 #      if defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE)
 #define calculate_LC_ALL(a)	S_calculate_LC_ALL(aTHX_ a)
 #      endif
+#      if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+#define native_query_LC_ALL()	S_native_query_LC_ALL(aTHX)
+#      endif
 #      if defined(WIN32)
 #define Win_byte_string_to_wstring	S_Win_byte_string_to_wstring
 #define Win_wstring_to_byte_string	S_Win_wstring_to_byte_string

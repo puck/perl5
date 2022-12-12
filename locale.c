@@ -661,6 +661,9 @@ Perl_locale_panic(const char * msg,
 #  define querylocale_r(cat)        mortalized_pv_copy(setlocale_r(cat, NULL))
 #  define querylocale_c(cat)        querylocale_r(cat)
 #  define querylocale_i(i)          querylocale_c(categories[i])
+#  ifdef LC_ALL
+#    define native_query_LC_ALL()     querylocale_c(LC_ALL)
+#  endif
 
 #elif   defined(USE_LOCALE_THREADS)                 \
    && ! defined(USE_THREAD_SAFE_LOCALE)             \
@@ -700,6 +703,9 @@ S_less_dicey_setlocale_r(pTHX_ const int category, const char * locale)
 #  define querylocale_r(cat)  mortalized_pv_copy(setlocale_r(cat, NULL))
 #  define querylocale_c(cat)                   querylocale_r(cat)
 #  define querylocale_i(i)                     querylocale_r(categories[i])
+#  ifdef LC_ALL
+#    define native_query_LC_ALL()              querylocale_c(LC_ALL)
+#  endif
 
 STATIC void
 S_less_dicey_void_setlocale_i(pTHX_ const unsigned cat_index,
@@ -767,15 +773,6 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 
     assert(cat_index <= NOMINAL_LC_ALL_INDEX);
     assert(locale);
-
-#if 0
-    Best to keep our records updated. the category lock already won't call this if equal
-    if (   PL_curlocales[cat_index]
-        && strEQ(locale, PL_curlocales[cat_index]))
-    {
-        return PL_curlocales[cat_index];
-    }
-#endif
 
     STDIZED_SETLOCALE_LOCK;
     const char * new_locale = savepv(stdized_setlocale(categories[cat_index],
@@ -854,7 +851,264 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
                                 bool_setlocale_i(cat##_INDEX_, locale)
 #  define bool_setlocale_r(cat, locale) cBOOL(setlocale_r(cat, locale))
 
-#  define querylocale_i(i) ((i <= NOMINAL_LC_ALL_INDEX)                 \
+STATIC const char *
+S_native_query_LC_ALL(pTHX)
+{
+
+#  ifndef LC_ALL
+
+    return mortalized_pv_copy(PL_curlocales[NOMINAL_LC_ALL_INDEX]);
+
+#  else
+
+  retry:
+    if (PL_LC_ALL_separator_string_len > 0) {
+        if strEQ(PL_LC_ALL_separator_string, "=") {
+            return mortalized_pv_copy(PL_curlocales[NOMINAL_LC_ALL_INDEX]);
+        }
+
+        for (PERL_UINT_FAST8_T i = 0; i < LC_ALL_INDEX_; i++) {
+            char * aggregate_locale;
+            Size_t aggregate_len = 0;
+
+            /* First calculate the needed size for the string listing the
+             * individual locales. */
+            for (unsigned i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+                aggregate_len += strlen(PL_curlocales[PL_LC_ALL_positions[i]]);
+                if (i < NOMINAL_LC_ALL_INDEX - 1) {
+                    aggregate_len += PL_LC_ALL_separator_string_len;
+                }
+            }
+
+            aggregate_len += 1;     /* Terminating NUL */
+
+            /* Allocate enough space for the aggregated string */
+            SAVEFREEPV(Newxz(aggregate_locale, aggregate_len, char));
+
+            /* Then fill it in */
+            for (unsigned i = 0; i< NOMINAL_LC_ALL_INDEX; i++)
+            {
+                my_strlcat(aggregate_locale,
+                           PL_curlocales[PL_LC_ALL_positions[i]],
+                           aggregate_len);
+                if (i < NOMINAL_LC_ALL_INDEX - 1) {
+                    my_strlcat(aggregate_locale,
+                               PL_LC_ALL_separator_string,
+                               aggregate_len);
+                }
+            }
+
+            DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                                   "native_query_LC_ALL returning '%s'\n",
+                                   aggregate_locale));
+
+            return aggregate_locale;
+        }
+    }
+
+    /* Here, don't have calculated the syntax of a disparate LC_ALL.  Try
+     * doing that now */
+    for (PERL_UINT_FAST8_T i = 0; i < LC_ALL_INDEX_; i++) {
+
+        /* Look for a category whose locale doesn't contain a 'C'.  This is a
+         * lot easier to deal with than the more general case.  khw thinks it
+         * likely that this situation is common. */
+        if (! strchr(PL_curlocales[i], 'C')) {
+
+            /* Found a locale without a 'C'.  We will use this one to figure
+             * out the syntax. */
+            const char * alternate = PL_curlocales[i];
+
+            /* An example syntax, from cygwin, is:
+             *  LC_COLLATE/LC_CTYPE/LC_MONETARY/LC_NUMERIC/LC_TIME/LC_MESSAGES
+             * The locales for a given category are always in the same
+             * position, indicated above, with a slash separating them */
+
+            /* Initialize */
+            /* May have to lock around this whole thing in case two threads
+             * want to be setting up this global at the same time */
+            for (unsigned int j = 0; j < LC_ALL_INDEX_; j++) {
+                PL_LC_ALL_positions[j] = -1;
+            }
+
+            const char * lc_all = NULL;
+
+            /* We need to find the category that goes in each position */
+            for (unsigned int j = 0; j < NOMINAL_LC_ALL_INDEX; j++) {
+
+                POSIX_SETLOCALE_LOCK;
+
+                /* First set everything to 'C' */
+                if (! posix_setlocale(LC_ALL, "C")) {
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                            "Couldn't set LC_ALL to 'C' on iteration %d\n", j));
+                    goto couldnt_find_sep;
+                }
+
+                /* Then set this category to the other locale */
+                if (! posix_setlocale(categories[j], alternate)) {
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                                           "Couldn't set %s to '%s'\n",
+                                           category_names[j], alternate));
+                    goto couldnt_find_sep;
+                }
+
+                /* Then find what the system says LC_ALL looks like with just
+                 * this one category not set to 'C' */
+                lc_all = savepv(posix_setlocale(LC_ALL, NULL));
+
+                POSIX_SETLOCALE_UNLOCK;
+
+                if (! lc_all) {
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                                           "Couldn't retrieve LC_ALL after %s"
+                                           " was set to '%s'\n",
+                                           category_names[j], alternate));
+                    goto couldnt_find_sep;
+                }
+
+                /* Assume is name=value pairs if the result contains an equals.
+                 * */
+                if (strchr(lc_all, '=')) {
+                    gwLOCALE_LOCK;
+                    Newxz(PL_LC_ALL_separator_string, 2, char);
+                    PL_LC_ALL_separator_string[0] = '=';
+                    PL_LC_ALL_separator_string_len = 1;
+                    gwLOCALE_UNLOCK;
+                    goto retry;
+                }
+
+                /* Find the position of that other locale */
+                const char * alt_pos = strstr(lc_all, alternate);
+                if (! alt_pos) {
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                                           "Couldn't find '%s' in %s\n",
+                                           alternate, lc_all));
+                    goto couldnt_find_sep;
+                }
+
+                /* Parse the LC_ALL string from the beginning up to where the
+                 * non-C locale is */
+                const char * s = lc_all;
+                int count = 0;
+                while (s < alt_pos) {
+
+                    /* Count the 'C's before the non-C */
+                    const char * next_C = (const char *) memchr(s, 'C',
+                                                                alt_pos - s);
+                    if (next_C) {
+                        count++;
+                        s = next_C + 1;
+                        continue;
+                    }
+
+                    /* Here, there is no 'C' before the alternate locale, so we
+                     * have the total count, and 's' points to one past the
+                     * previous 'C'.  The separator starts here, ending just
+                     * before the non-C locale
+                     *
+                     * If we don't already have a separator saved, save this as
+                     * it */
+                    if (PL_LC_ALL_separator_string_len == 0) {
+                        gwLOCALE_LOCK;
+
+                        PL_LC_ALL_separator_string_len = alt_pos - s;
+                        Newxz(PL_LC_ALL_separator_string,
+                              PL_LC_ALL_separator_string_len + 1,
+                              char);
+                        Copy(s,
+                             PL_LC_ALL_separator_string,
+                             PL_LC_ALL_separator_string_len,
+                             char);
+
+                        gwLOCALE_UNLOCK;
+                        break;
+                    }
+
+                    /* Otherwise make sure it's the same as before */
+                    const char * new_sep = s;
+                    unsigned int new_sep_len = alt_pos - s;
+                    if (   new_sep_len != PL_LC_ALL_separator_string_len
+                        || memNE(PL_LC_ALL_separator_string, new_sep,
+                                 PL_LC_ALL_separator_string_len))
+                    {
+                        DEBUG_Lv(PerlIO_printf(Perl_debug_log,
+                                               "Separators are different"
+                                               " '%.*s' versus '%.*s'\n",
+                                               PL_LC_ALL_separator_string_len,
+                                               PL_LC_ALL_separator_string,
+                                               new_sep_len, new_sep));
+                        goto couldnt_find_sep;
+                    }
+
+                    /* Here, we have found the position of category[j] in
+                     * LC_ALL. */ 
+                    break;
+                }
+
+                if (PL_LC_ALL_positions[count] != -1) {
+                    locale_panic_(Perl_form(aTHX_
+                                  "Categories %s and %s both appear to occupy"
+                                  " position %d in LC_ALL; there is something"
+                                  " wrong with the calculation\n",
+                                  category_names[count], category_names[j],
+                                  count));
+                }
+
+                /* Save the index of this category in its corresponding
+                 * position */
+                PL_LC_ALL_positions[count] = j;
+            } /* End of loop through all the positions */
+
+#    ifdef DEBUGGING
+            /* XXX ehwn have an LC_foo but no USE_LC_foo */
+            for (unsigned int j = 0; j < NOMINAL_LC_ALL_INDEX; j++) {
+                const unsigned index = PL_LC_ALL_positions[j];
+                DEBUG_Lv(PerlIO_printf(Perl_debug_log, "%s",
+                                                       category_names[index]));
+                if (j < NOMINAL_LC_ALL_INDEX - 1) {
+                    DEBUG_Lv(PerlIO_printf(Perl_debug_log, "%.*s",
+                                           PL_LC_ALL_separator_string_len,
+                                           PL_LC_ALL_separator_string));
+                }
+            }
+            DEBUG_Lv(PerlIO_printf(Perl_debug_log, "\n"));
+
+#    endif
+
+            /* Here everything is calculated. Can use the algorithm */
+            goto retry;
+        }
+    }
+
+  couldnt_find_sep:
+    PL_LC_ALL_separator_string_len = 0;
+    Safefree(PL_LC_ALL_separator_string);
+    PL_LC_ALL_separator_string = NULL;
+
+    /* But all is not lost.  We can coerce every category into its locale and
+     * then query the system's locale to get the proper syntax.  The above code
+     * sets things up to avoid this work each time, unless something is awry */
+
+    for (PERL_UINT_FAST8_T i = 0; i < LC_ALL_INDEX_; i++) {
+        LC_CATEGORY_LOCK_i_(i);
+    }
+
+    POSIX_SETLOCALE_LOCK;
+    const char * retval = mortalized_pv_copy(posix_setlocale(LC_ALL, NULL));
+    POSIX_SETLOCALE_UNLOCK;
+
+    for (PERL_INT_FAST8_T i = LC_ALL_INDEX_ - 1; i >= 0; i--) {
+        LC_CATEGORY_UNLOCK_i_(i);
+    }
+
+    return retval;
+
+#  endif
+
+}
+
+#  define querylocale_i(i) (((i) <= NOMINAL_LC_ALL_INDEX)               \
                             ? mortalized_pv_copy(PL_curlocales[i])      \
                             : NULL)
 #  define querylocale_c(cat)  querylocale_i(cat##_INDEX_)
@@ -900,6 +1154,9 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 #  define querylocale_i(i)      mortalized_pv_copy(my_querylocale_i(i))
 #  define querylocale_c(cat)    querylocale_i(cat##_INDEX_)
 #  define querylocale_r(cat)    querylocale_i(get_category_index(cat,NULL))
+#  ifdef LC_ALL
+#    define native_query_LC_ALL()  querylocale_c(LC_ALL)
+#  endif
 
 #  ifdef USE_QUERYLOCALE
 #    define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
@@ -1820,10 +2077,11 @@ S_find_locale_from_environment(pTHX_ const unsigned int index)
 }
 
 #endif
-#if   defined(WIN32)					\
- ||   defined(USE_POSIX_2008_LOCALE)			\
- ||   defined(USE_THREAD_SAFE_LOCALE_EMULATION)		\
+#if   defined(WIN32)                                    \
+ ||   defined(USE_POSIX_2008_LOCALE)                    \
+ ||   defined(USE_THREAD_SAFE_LOCALE_EMULATION)         \
  || ! defined(LC_ALL)
+
 
 STATIC
 const char *
@@ -3026,7 +3284,7 @@ Perl_setlocale(const int category, const char * locale)
             toggled = TRUE;
         }
 
-        retval = querylocale_c(LC_ALL);
+        retval = native_query_LC_ALL();
 
         if (toggled) {
             set_numeric_standard();
@@ -4565,7 +4823,7 @@ S_my_langinfo_i(pTHX_
 
       case RADIXCHAR:
 
-#    if      defined(HAS_SNPRINTF)                                              \
+#    if      defined(HAS_SNPRINTF)                                          \
        && (! defined(HAS_LOCALECONV) || defined(TS_W32_BROKEN_LOCALECONV))
 
         {
@@ -4824,7 +5082,7 @@ S_my_langinfo_i(pTHX_
                 return_format = TRUE;
                 break;
               case ALT_DIGITS:
-                format = "%Ow";	/* Find the alternate digit for 0 */
+                format = "%Ow"; /* Find the alternate digit for 0 */
                 break;
             }
 
