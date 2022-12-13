@@ -2134,6 +2134,9 @@
 #define padname_dup(a,b)	Perl_padname_dup(aTHX_ a,b)
 #define padnamelist_dup(a,b)	Perl_padnamelist_dup(aTHX_ a,b)
 #  endif
+#  if defined(USE_ITHREADS) && ! defined(PERL_IMPLICIT_SYS)
+#define PerlEnv_putenv(a)	S_PerlEnv_putenv(aTHX_ a)
+#  endif
 #  if defined(USE_LOCALE_COLLATE)
 #define magic_freecollxfrm(a,b)	Perl_magic_freecollxfrm(aTHX_ a,b)
 #define magic_setcollxfrm(a,b)	Perl_magic_setcollxfrm(aTHX_ a,b)

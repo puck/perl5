@@ -7666,6 +7666,11 @@ PERL_CALLCONV SV*	Perl_sv_dup_inc(pTHX_ const SV *const ssv, CLONE_PARAMS *const
 	assert(param)
 
 #endif
+#if defined(USE_ITHREADS) && ! defined(PERL_IMPLICIT_SYS)
+STATIC bool	S_PerlEnv_putenv(pTHX_ char * str);
+#define PERL_ARGS_ASSERT_PERLENV_PUTENV	\
+	assert(str)
+#endif
 #if defined(USE_LOCALE_COLLATE)
 PERL_CALLCONV int	Perl_magic_freecollxfrm(pTHX_ SV* sv, MAGIC* mg)
 			__attribute__visibility__("hidden");

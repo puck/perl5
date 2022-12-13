@@ -3934,6 +3934,9 @@ XEop	|void   |dtrace_probe_phase|enum perl_phase phase
 
 XEop	|char  *|dup_warnings	|NULLOK char* warnings
 
+#if defined(USE_ITHREADS) && ! defined(PERL_IMPLICIT_SYS)
+Si	|bool	|PerlEnv_putenv|NN char * str
+#endif
 #ifndef USE_ITHREADS
 Amd	|void	|CopFILEGV_set	|NN COP * c|NN GV * gv
 #endif
