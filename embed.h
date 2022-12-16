@@ -917,6 +917,11 @@
 #define PerlIO_unread(a,b,c)	Perl_PerlIO_unread(aTHX_ a,b,c)
 #define PerlIO_write(a,b,c)	Perl_PerlIO_write(aTHX_ a,b,c)
 #endif
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+#define category_lock_i(a,b,c)	Perl_category_lock_i(aTHX_ a,b,c)
+#define category_unlock_i(a,b,c)	Perl_category_unlock_i(aTHX_ a,b,c)
+#define posix_LC_foo_(a,b)	Perl_posix_LC_foo_(aTHX_ a,b)
+#endif
 #if defined(WIN32) || defined(VMS)
 #define do_aspawn(a,b,c)	Perl_do_aspawn(aTHX_ a,b,c)
 #define do_spawn(a)		Perl_do_spawn(aTHX_ a)
@@ -1535,7 +1540,7 @@
 #  if !(defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE))
 #    if defined(PERL_IN_LOCALE_C)
 #      if defined(USE_LOCALE)
-#        if defined(WIN32) || defined(USE_POSIX_2008_LOCALE) || ! defined(LC_ALL)
+#        if defined(WIN32)					       || defined(USE_POSIX_2008_LOCALE)			       || defined(USE_THREAD_SAFE_LOCALE_EMULATION)		       || ! defined(LC_ALL)
 #define calculate_LC_ALL(a)	S_calculate_LC_ALL(aTHX_ a)
 #        endif
 #      endif

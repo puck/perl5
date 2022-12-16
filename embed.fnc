@@ -1658,6 +1658,15 @@ ATdo	|const char*|Perl_langinfo8|const nl_item item|NULLOK utf8ness_t * utf8ness
 ATdo	|const char*|Perl_langinfo|const int item
 ATdo	|const char*|Perl_langinfo8|const int item|NULLOK utf8ness_t * utf8ness
 #endif
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+Cp	|void	|category_lock_i|unsigned cat_index			\
+				|NN const char * file			\
+				|const line_t line
+Cp	|void	|category_unlock_i|unsigned cat_index			\
+				|NN const char * file			\
+				|const line_t line
+CIp	|int	|posix_LC_foo_	|const int c|const U8 classnum
+#endif
 #ifdef WIN32
 p	|bool	|get_win32_message_utf8ness|NULLOK const char * string
 #endif
@@ -3454,7 +3463,10 @@ S	|const char *|find_locale_from_environment|const unsigned int index
 S	|const char *|calculate_LC_ALL|const locale_t cur_obj
 #    else
 :	    regen/embed.pl can't currently cope with 'elif'
-#      if defined(WIN32) || defined(USE_POSIX_2008_LOCALE) || ! defined(LC_ALL)
+#      if defined(WIN32)					\
+       || defined(USE_POSIX_2008_LOCALE)			\
+       || defined(USE_THREAD_SAFE_LOCALE_EMULATION)		\
+       || ! defined(LC_ALL)
 S	|const char *|calculate_LC_ALL|NN const char ** individ_locales
 #      endif
 #    endif

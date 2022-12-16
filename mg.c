@@ -1036,7 +1036,9 @@ Perl_magic_get(pTHX_ SV *sv, MAGIC *mg)
         }
         else if (strEQ(remaining, "AFE_LOCALES")) {
 
-#if ! defined(USE_ITHREADS) || defined(USE_THREAD_SAFE_LOCALE)
+#if ! defined(USE_ITHREADS)                     \
+ ||   defined(USE_THREAD_SAFE_LOCALE)           \
+ || defined(USE_THREAD_SAFE_LOCALE_EMULATION)
 
             sv_setuv(sv, (UV) 1);
 

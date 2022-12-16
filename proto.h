@@ -4767,7 +4767,7 @@ PERL_CALLCONV Signal_t	Perl_sighandler(int sig)
 #if !(defined(USE_POSIX_2008_LOCALE) && defined(USE_QUERYLOCALE))
 #  if defined(PERL_IN_LOCALE_C)
 #    if defined(USE_LOCALE)
-#      if defined(WIN32) || defined(USE_POSIX_2008_LOCALE) || ! defined(LC_ALL)
+#      if defined(WIN32)					       || defined(USE_POSIX_2008_LOCALE)			       || defined(USE_THREAD_SAFE_LOCALE_EMULATION)		       || ! defined(LC_ALL)
 STATIC const char *	S_calculate_LC_ALL(pTHX_ const char ** individ_locales);
 #define PERL_ARGS_ASSERT_CALCULATE_LC_ALL	\
 	assert(individ_locales)
@@ -7762,6 +7762,20 @@ PERL_CALLCONV bool	Perl_quadmath_format_valid(const char* format)
 			__attribute__visibility__("hidden");
 #define PERL_ARGS_ASSERT_QUADMATH_FORMAT_VALID	\
 	assert(format)
+
+#endif
+#if defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+PERL_CALLCONV void	Perl_category_lock_i(pTHX_ unsigned cat_index, const char * file, const line_t line);
+#define PERL_ARGS_ASSERT_CATEGORY_LOCK_I	\
+	assert(file)
+PERL_CALLCONV void	Perl_category_unlock_i(pTHX_ unsigned cat_index, const char * file, const line_t line);
+#define PERL_ARGS_ASSERT_CATEGORY_UNLOCK_I	\
+	assert(file)
+#ifndef PERL_NO_INLINE_FUNCTIONS
+PERL_STATIC_FORCE_INLINE int	Perl_posix_LC_foo_(pTHX_ const int c, const U8 classnum)
+			__attribute__always_inline__;
+#define PERL_ARGS_ASSERT_POSIX_LC_FOO_
+#endif
 
 #endif
 #if defined(WIN32)

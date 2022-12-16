@@ -753,6 +753,15 @@ PERLVARA(I, curlocales, 13, const char *)
 PERLVARI(I, cur_LC_ALL, const char *, NULL)
 
 #endif
+#ifdef USE_THREAD_SAFE_LOCALE_EMULATION
+PERLVARA(I, restore_locale, 12, const char *)
+PERLVARA(I, restore_locale_depth, 12, Size_t)
+#endif
+
+PERLVARI(I, perl_controls_locale, bool, true)
+
+#ifndef USE_THREAD_SAFE_LOCALE_EMULATION
+#endif
 #ifdef USE_LOCALE_COLLATE
 
 /* The emory needed to store the collxfrm transformation of a string with
