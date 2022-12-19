@@ -492,6 +492,7 @@ PERLVAR(I, origfilename, char *)
 PERLVARI(I, xsubfilename, const char *, NULL)
 PERLVAR(I, diehook,	SV *)
 PERLVAR(I, warnhook,	SV *)
+PERLVARI(I, requirehook, SV *,NULL)
 
 /* switches */
 PERLVAR(I, patchlevel,	SV *)
