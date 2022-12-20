@@ -1,6 +1,5 @@
 use strict;
 use warnings;
-$|=1;
 
 BEGIN {
     use Config;
@@ -15,49 +14,33 @@ use ExtUtils::testlib;
 use threads;
 
 BEGIN {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
     if (! eval 'use threads::shared; 1') {
         print("1..0 # SKIP threads::shared not available\n");
         exit(0);
     }
 
-    local $SIG{'HUP'} = sub {print STDERR __FILE__, ": ", __LINE__, ": \n"; };
-    use Devel::Peek;
-print STDERR __FILE__, ": ", __LINE__, ": creating thread\n"; 
-    my $thr = threads->create(sub {print STDERR __FILE__, ": ", __LINE__, ": \n"; });
-print STDERR __FILE__, ": ", __LINE__, ": thread created ", $thr->tid(), "\n"; 
-    #Dump $thr;
-print STDERR __FILE__, ": ", __LINE__, ": killing thread ", $thr->tid(), "\n";
+    local $SIG{'HUP'} = sub {};
+    my $thr = threads->create(sub {});
     eval { $thr->kill('HUP') };
-print STDERR __FILE__, ": ", __LINE__, ": joining with thread\n"; 
-    Dump $thr;
     $thr->join();
-print STDERR __FILE__, ": ", __LINE__, ": join done ", $thr->tid(), "\n";
-    Dump $thr;
     if ($@ && $@ =~ /safe signals/) {
         print("1..0 # SKIP Not using safe signals\n");
         exit(0);
     }
 
-print STDERR __FILE__, ": ", __LINE__, ": require Queue\n"; 
     require Thread::Queue;
-print STDERR __FILE__, ": ", __LINE__, ": require Semaphore\n"; 
     require Thread::Semaphore;
-print STDERR __FILE__, ": ", __LINE__, ": Semaphore done\n"; 
 
     $| = 1;
     print("1..18\n");   ### Number of tests that will be run ###
 };
 
 
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
 my $q = Thread::Queue->new();
 my $TEST = 1;
 
-
 sub ok
 {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
     $q->enqueue(@_);
 
     while ($q->pending()) {
@@ -77,21 +60,19 @@ print STDERR __FILE__, ": ", __LINE__, ": \n";
 
 ### Start of Testing ###
 ok(1, 'Loaded');
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
 
 ### Thread cancel ###
 
 # Set up to capture warning when thread terminates
 my @errs :shared;
-$SIG{__WARN__} = sub {print STDERR __FILE__, ": ", __LINE__, ": \n";  push(@errs, @_); };
+$SIG{__WARN__} = sub { push(@errs, @_); };
 
 sub thr_func {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
     my $q = shift;
 
     # Thread 'cancellation' signal handler
     $SIG{'KILL'} = sub {
-        print STDERR __FILE__, ": ", __LINE__, ": \n"; $q->enqueue(1, 'Thread received signal');
+        $q->enqueue(1, 'Thread received signal');
         die("Thread killed\n");
     };
 
@@ -125,7 +106,6 @@ ok(@errs && $errs[0] =~ /Thread killed/, 'Thread termination warning');
 
 sub thr_func2
 {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
     my $q = shift;
 
     my $sema = shift;
@@ -133,7 +113,6 @@ print STDERR __FILE__, ": ", __LINE__, ": \n";
 
     # Set up the signal handler for suspension/resumption
     $SIG{'STOP'} = sub {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
         $q->enqueue(1, 'Thread suspending');
         $sema->down();
         $q->enqueue(1, 'Thread resuming');
@@ -143,7 +122,6 @@ print STDERR __FILE__, ": ", __LINE__, ": \n";
     # Set up the signal handler for graceful termination
     my $term = 0;
     $SIG{'TERM'} = sub {
-print STDERR __FILE__, ": ", __LINE__, ": \n"; 
         $q->enqueue(1, 'Thread caught termination signal');
         $term = 1;
     };
