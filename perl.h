@@ -7166,8 +7166,8 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
 #  ifdef USE_THREAD_SAFE_LOCALE_EMULATION
 #    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_                       \
                                 STMT_START {                                \
-                                    Safefree(PL_LC_ALL_separator_string);   \
-                                    PL_LC_ALL_separator_string = NULL;      \
+                                    /*Safefree(PL_LC_ALL_separator_string);*/   \
+                                    /*PL_LC_ALL_separator_string = NULL;*/      \
                                 } STMT_END
 #  else
 #    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_  NOOP
