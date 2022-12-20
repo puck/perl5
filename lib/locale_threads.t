@@ -1108,7 +1108,8 @@ SKIP: {
           # cases
     #print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \%all_tests if $debug;
 
-        my %thread_already_used_locales;
+    my %thread_already_used_locales;
+
     # Now generate the tests for each thread.
     my @tests_by_thread;
     for my $i (0 .. $thread_count - 1) {
@@ -1226,7 +1227,9 @@ SKIP: {
                 }
 
                 $test->{category_name} = $category_name;
-                $test->{locale_name} = $this_category_tests->{locale_name};
+                my $locale_name = $this_category_tests->{locale_name};
+                $test->{locale_name} = $locale_name;
+                $test->{codeset} = $locale_name_to_object{$locale_name}{codeset};
 
                 push @this_thread_cooked_tests, $test;
             }
@@ -1305,6 +1308,7 @@ SKIP: {
                         print STDERR \"\\nthread \", threads->tid(),
                                      \" failed in iteration \$iteration\",
                                      \" for locale \$test->{locale_name}\",
+                                     \" codeset \$test->{codeset}\",
                                      \" \$category_name\",
                                      \" op='\$test->{op}'\",
                                      \" after getting \",
