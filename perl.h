@@ -1273,8 +1273,7 @@ violations are fatal.
     * Windows for quite a few releases now. */
 #  if defined(USE_LOCALE_THREADS) && ! defined(NO_THREAD_SAFE_LOCALE)
 #    if  defined(USE_POSIX_2008_LOCALE)                                     \
-     ||  defined(__MINGW32__) || defined(__MINGW64__)                       \
-     || (defined(WIN32) && defined(_MSC_VER))
+     || (defined(WIN32) && defined(_MSC_VER) && ! defined(PERL_IS_GCC))
 #      define USE_THREAD_SAFE_LOCALE
 #    else
 #      define USE_THREAD_SAFE_LOCALE_EMULATION
