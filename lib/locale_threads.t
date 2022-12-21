@@ -1292,11 +1292,18 @@ SKIP: {
                     my \$expected = \$test->{expected};
 
                     #print STDERR __FILE__, ': ', __LINE__, ': ', threads->tid, ': ', \$iteration, ': ', Dumper \$test;
+                    my \$category_name = \$test->{category_name};
+
+                    if ($debug) {
+                        print STDERR \"\\nthread \", threads->tid(),
+                                     \" for locale \$test->{locale_name}\",
+                                     \" codeset \$test->{codeset}\",
+                                     \" \$category_name\",
+                                     \" About to do '\$test->{op}'\n\";
+                    }
 
                     # And do the test.
                     my \$got = eval \$test->{op};
-
-                    my \$category_name = \$test->{category_name};
 
                     # Then verify it is the expected value
                     if (defined \$got && \$got eq \$expected) {
