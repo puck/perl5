@@ -1,5 +1,8 @@
 /*    locale.c
 12345678911234567892123456789312345678941234567895123456789612345678971234567898
+locale.c:7768:49: warning: format '%d' expects argument of type 'int', but      argument 4 has type 'line_t {aka long unsigned int}' [-Wformat=]
+ 149                          file,  line, cat, wanted));
+
  *    strptime
  *    Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001,
  *    2002, 2003, 2005, 2006, 2007, 2008 by Larry Wall and others
