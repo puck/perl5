@@ -46,7 +46,7 @@ $Data::Dumper::Deepcopy = 1;
 
 plan(2);
 my $debug = 0;
-$debug = 0; #$^O =~ /MSWin32/i;
+#$debug = 1; #$^O =~ /MSWin32/i;
 my $d = $^D;
 #$d |= 0x04000000|0x00100000 if $^O =~ /MSWin32/i and $debug;
 
@@ -457,9 +457,9 @@ sub sort_by_hashed_locale {
     return sort_locales;
 }
 
-my $thread_count = 25; #00;
+my $thread_count = 3; #00;
 #my $thread_count = $^O =~ /linux/i ? 50 : 10;
-my $iterations = 100;
+my $iterations = 5;
 #$iterations = 50 if $^O =~ /MSWin32/i;
 my $max_result_length = 10000;
 
@@ -743,6 +743,7 @@ SKIP: {
         $map_category_name_to_number{$category} = $cat_num;
 
         if ($category eq 'LC_COLLATE') {
+        next;
             add_trials('LC_COLLATE',
                        # 'reverse' causes it to be definitely out of order for
                        # the 'sort' to correct
@@ -832,6 +833,7 @@ SKIP: {
         }
 
         if ($category eq 'LC_MESSAGES') {
+        next;
             print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_MESSAGES',
                        "join \"\n\", map { \$! = \$_; \"\$!\" } ($msg_catalog)");
@@ -842,6 +844,7 @@ SKIP: {
         }
 
         if ($category eq 'LC_MONETARY') {
+        next;
             print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             #add_trials('LC_MONETARY', "localeconv()->{currency_symbol}") unless $^O =~ /MSWin32/i;
             print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
@@ -851,6 +854,7 @@ SKIP: {
         }
 
         if ($category eq 'LC_NUMERIC') {
+        next;
             print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             #add_trials('LC_NUMERIC', "no warnings; 'uninitialised'; join '|',"
             #                       . " localeconv()->{decimal_point},"
@@ -1249,7 +1253,7 @@ SKIP: {
     print STDERR __FILE__, ": ", __LINE__, ": ", $tests_expanded if $debug;
 
     my $switches = "";
-    $switches = "switches => [ -DLvU ]" if $debug;
+    $switches = "switches => [ -DU ]" if $debug;
 
     # See if multiple threads can simultaneously change the locale, and give
     # the expected radix results.  On systems without a comma radix locale,
