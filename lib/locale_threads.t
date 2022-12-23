@@ -1211,7 +1211,7 @@ SKIP: {
 
     my @cooked_tests;
     for (my $i = 0; $i < @tests_by_thread; $i++) {
-        #print STDERR __FILE__, ': ', __LINE__, ': ', $i, ': ', Dumper \$tests_by_thread[$i] if $debug;
+        print STDERR __FILE__, ': ', __LINE__, ': ', $i, ': ', Dumper \$tests_by_thread[$i] if $debug;
 
         my $this_thread_tests = $tests_by_thread[$i];
         my @this_thread_cooked_tests;

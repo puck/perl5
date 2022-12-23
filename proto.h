@@ -5105,17 +5105,6 @@ STATIC void	S_validate_suid(pTHX_ PerlIO *rsfp);
 /* PERL_CALLCONV void	CopFILEGV_set(pTHX_ COP * c, GV * gv); */
 #define PERL_ARGS_ASSERT_COPFILEGV_SET
 #endif
-#if !defined(USE_QUERYLOCALE)
-#  if defined(PERL_IN_LOCALE_C)
-#    if defined(USE_LOCALE)
-#      if defined(USE_POSIX_2008_LOCALE)
-STATIC const char*	S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char * new_locale, recalc_lc_all_t recalc_LC_ALL);
-#define PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I	\
-	assert(new_locale)
-#      endif
-#    endif
-#  endif
-#endif
 #if !defined(WIN32)
 PERL_CALLCONV bool	Perl_do_exec3(pTHX_ const char *incmd, int fd, int do_report)
 			__attribute__visibility__("hidden");
@@ -5763,6 +5752,11 @@ STATIC void	S_new_ctype(pTHX_ const char* newctype, bool force);
 STATIC void	S_new_numeric(pTHX_ const char* newnum, bool force);
 #define PERL_ARGS_ASSERT_NEW_NUMERIC	\
 	assert(newnum)
+#    endif
+#    if defined(USE_PL_CURLOCALES)
+STATIC const char*	S_update_PL_curlocales_i(pTHX_ const unsigned int index, const char * new_locale, recalc_lc_all_t recalc_LC_ALL);
+#define PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I	\
+	assert(new_locale)
 #    endif
 #    if defined(USE_POSIX_2008_LOCALE)
 STATIC const char*	S_emulate_setlocale_i(pTHX_ const unsigned int index, const char* new_locale, const recalc_lc_all_t recalc_LC_ALL, const line_t line);

@@ -744,7 +744,7 @@ PERLVARI(I, cur_locale_obj, locale_t, NULL)
 #ifdef USE_PL_CURLOCALES
 
 /* This is the most number of categories we've encountered so far on any
- * platform */
+ * platform.  Includes space for LC_ALL at the tail */
 PERLVARA(I, curlocales, PERL_LOCALE_CATEGORIES_COUNT_ + 1, const char *)
 
 #endif
@@ -759,8 +759,9 @@ PERLVARA(I, restore_locale_depth, PERL_LOCALE_CATEGORIES_COUNT_, Size_t)
 /*PERLVAR(I,  libc_char_fcn_result, int)       / * Scratch pad */
 #endif
 
+#if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
 PERLVARI(I, perl_controls_locale, bool, true)
-
+#endif
 #ifdef USE_LOCALE_COLLATE
 
 /* The emory needed to store the collxfrm transformation of a string with

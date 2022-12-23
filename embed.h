@@ -1612,15 +1612,6 @@
 #define new_he()		S_new_he(aTHX)
 #    endif
 #  endif
-#  if !defined(USE_QUERYLOCALE)
-#    if defined(PERL_IN_LOCALE_C)
-#      if defined(USE_LOCALE)
-#        if defined(USE_POSIX_2008_LOCALE)
-#define update_PL_curlocales_i(a,b,c)	S_update_PL_curlocales_i(aTHX_ a,b,c)
-#        endif
-#      endif
-#    endif
-#  endif
 #  if !defined(WIN32)
 #define do_exec3(a,b,c)		Perl_do_exec3(aTHX_ a,b,c)
 #  endif
@@ -1795,6 +1786,9 @@
 #      endif
 #      if defined(USE_LOCALE_NUMERIC)
 #define new_numeric(a,b)	S_new_numeric(aTHX_ a,b)
+#      endif
+#      if defined(USE_PL_CURLOCALES)
+#define update_PL_curlocales_i(a,b,c)	S_update_PL_curlocales_i(aTHX_ a,b,c)
 #      endif
 #      if defined(USE_POSIX_2008_LOCALE)
 #define emulate_setlocale_i(a,b,c,d)	S_emulate_setlocale_i(aTHX_ a,b,c,d)

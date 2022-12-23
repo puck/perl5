@@ -778,6 +778,7 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
     assert(cat_index <= NOMINAL_LC_ALL_INDEX);
     assert(locale);
 
+    /* Do the setlocale */
     STDIZED_SETLOCALE_LOCK;
     const char * new_locale = savepv(stdized_setlocale(categories[cat_index],
                                                        locale));
@@ -785,6 +786,9 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 
     DEBUG_Lv(PerlIO_printf(Perl_debug_log, "set %s to %s\n", category_names[cat_index], new_locale));
 
+    /* If the new locale is invalid, return that; but if the calling context is
+     * void, the caller expects things to always succeed, so it is an internal
+     * error that it doesn't */
     if (new_locale == NULL) {
         if (ret_type == WANT_VOID) {
             setlocale_failure_panic_i(cat_index,
@@ -796,39 +800,53 @@ S_my_setlocale_i(pTHX_ const unsigned int cat_index,
 
         return NULL;
     }
+
+#  ifdef DEBUGGING
+
     else if (strNE(locale, new_locale)) {
         DEBUG_L(PerlIO_printf(Perl_debug_log, "%s NOT EQUAL %s vs %s\n", category_names[cat_index], locale, new_locale));
     }
 
-#    ifdef LC_ALL
+#  endif
+#  ifdef LC_ALL
 
     if (cat_index != LC_ALL_INDEX_)
 
-#    endif
+#  endif
 
-    {
+    {   /* For non-LC_ALL, replace the saved value with the new one */
         Safefree(PL_curlocales[cat_index]);
         PL_curlocales[cat_index] = new_locale;
     }
 
-#    ifdef LC_ALL
+#  ifdef LC_ALL
 
-    else {
+    else {  /* For LC_ALL, lock in the new locale, and use the system's
+             * setlocale() query to calculate and replace each individual
+             * category's saved value */
+        POSIX_SETLOCALE_LOCK;
+        if (! posix_setlocale(LC_ALL, new_locale)) {
+            setlocale_failure_panic_i(LC_ALL_INDEX_, new_locale, new_locale,
+                                      __LINE__, line);
+        }
+
         for (PERL_UINT_FAST8_T i = 0; i < LC_ALL_INDEX_; i++) {
             Safefree(PL_curlocales[i]);
-
-            POSIX_SETLOCALE_LOCK;
             PL_curlocales[i] = savepv(posix_setlocale(categories[i], NULL));
-            POSIX_SETLOCALE_UNLOCK;
         }
+
+        POSIX_SETLOCALE_UNLOCK;
 
         Safefree(new_locale);
     }
 
+    /* And also replace the LC_ALL saved value.  Note that we keep LC_ALL in a
+     * standardized form that may differ from the system's, so we can't just
+     * use the system's value */
     Safefree(PL_curlocales[LC_ALL_INDEX_]);
     PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
 
-#    endif
+#  endif
 
     return PL_curlocales[cat_index];
 }
@@ -1161,25 +1179,6 @@ S_native_query_LC_ALL(pTHX)
 #  ifdef LC_ALL
 #    define native_query_LC_ALL()  querylocale_c(LC_ALL)
 #  endif
-
-#  ifdef USE_QUERYLOCALE
-#    define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
-
-     /* This code used to think querylocale() was valid on LC_ALL.  Make sure
-      * all instances of that have been removed */
-#    define QUERYLOCALE_ASSERT(index)                                       \
-                        __ASSERT_(isSINGLE_BIT_SET(category_masks[index]))
-#    if ! defined(HAS_QUERYLOCALE) && defined(_NL_LOCALE_NAME)
-#      define querylocale_l(index, locale_obj)                              \
-            (QUERYLOCALE_ASSERT(index)                                      \
-             mortalized_pv_copy(nl_langinfo_l(                              \
-                         _NL_LOCALE_NAME(categories[index]), locale_obj)))
-#    else
-#      define querylocale_l(index, locale_obj)                              \
-        (QUERYLOCALE_ASSERT(index)                                          \
-         mortalized_pv_copy(querylocale(category_masks[index], locale_obj)))
-#    endif
-#  endif
 #  if defined(__GLIBC__) && defined(USE_LOCALE_MESSAGES)
 #    define HAS_GLIBC_LC_MESSAGES_BUG
 #    include <libintl.h>
@@ -1313,57 +1312,6 @@ S_my_querylocale_i(pTHX_ const unsigned int index)
     assert(strNE(retval, ""));
     return retval;
 }
-
-#  ifdef USE_PL_CURLOCALES
-
-STATIC const char *
-S_update_PL_curlocales_i(pTHX_
-                         const unsigned int index,
-                         const char * new_locale,
-                         recalc_lc_all_t recalc_LC_ALL)
-{
-    /* This is a helper function for emulate_setlocale_i(), mostly used to
-     * make that function easier to read. */
-
-    PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
-    assert(index <= NOMINAL_LC_ALL_INDEX);
-
-    if (index == LC_ALL_INDEX_) {
-        unsigned int i;
-
-        /* For LC_ALL, we change all individual categories to correspond */
-                         /* PL_curlocales is a parallel array, so has same
-                          * length as 'categories' */
-        for (i = 0; i < LC_ALL_INDEX_; i++) {
-            Safefree(PL_curlocales[i]);
-            PL_curlocales[i] = savepv(new_locale);
-        }
-
-        Safefree(PL_curlocales[LC_ALL_INDEX_]);
-        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
-        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
-        return PL_curlocales[LC_ALL_INDEX_];
-    }
-
-    /* Update the single category's record */
-    Safefree(PL_curlocales[index]);
-    PL_curlocales[index] = savepv(new_locale);
-
-    /* And also LC_ALL if the input says to, including if this is the final
-     * iteration of a loop updating all sub-categories */
-    if (   recalc_LC_ALL == YES_RECALC_LC_ALL
-        || (   recalc_LC_ALL == RECALCULATE_LC_ALL_ON_FINAL_INTERATION
-            && index == NOMINAL_LC_ALL_INDEX - 1))
-    {
-        Safefree(PL_curlocales[LC_ALL_INDEX_]);
-        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
-        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
-    }
-
-    return PL_curlocales[index];
-}
-
-#  endif  /* Need PL_curlocales[] */
 #  ifdef USE_QUERYLOCALE
 #    define isSINGLE_BIT_SET(mask) isPOWER_OF_2(mask)
 
@@ -1847,6 +1795,63 @@ S_emulate_setlocale_i(pTHX_
 #endif   /* End of the various implementations of the setlocale and
             querylocale macros used in the remainder of this program */
 
+#ifdef USE_PL_CURLOCALES
+
+STATIC const char *
+S_update_PL_curlocales_i(pTHX_
+                         const unsigned int index,
+                         const char * new_locale,
+                         recalc_lc_all_t recalc_LC_ALL)
+{
+    PERL_ARGS_ASSERT_UPDATE_PL_CURLOCALES_I;
+    assert(index <= NOMINAL_LC_ALL_INDEX);
+
+    /* Updates PL_curlocales[] */
+
+#  ifdef LC_ALL
+
+    if (index == LC_ALL_INDEX_) {
+        unsigned int i;
+
+        /* For LC_ALL, we change all individual categories to correspond */
+                         /* PL_curlocales is a parallel array, so has same
+                          * length as 'categories' */
+        for (i = 0; i < LC_ALL_INDEX_; i++) {
+            Safefree(PL_curlocales[i]);
+            PL_curlocales[i] = savepv(new_locale);
+        }
+
+        Safefree(PL_curlocales[LC_ALL_INDEX_]);
+        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
+        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
+        return PL_curlocales[LC_ALL_INDEX_];
+    }
+
+#  endif
+
+    /* Update the single category's record */
+    Safefree(PL_curlocales[index]);
+    PL_curlocales[index] = savepv(new_locale);
+
+#  ifdef LC_ALL
+
+    /* And also LC_ALL if the input says to, including if this is the final
+     * iteration of a loop updating all sub-categories */
+    if (   recalc_LC_ALL == YES_RECALC_LC_ALL
+        || (   recalc_LC_ALL == RECALCULATE_LC_ALL_ON_FINAL_INTERATION
+            && index == NOMINAL_LC_ALL_INDEX - 1))
+    {
+        Safefree(PL_curlocales[LC_ALL_INDEX_]);
+        PL_curlocales[LC_ALL_INDEX_] = savepv(calculate_LC_ALL(PL_curlocales));
+        DEBUG_U(PerlIO_printf(Perl_debug_log, "%s\n", PL_curlocales[LC_ALL_INDEX_]));
+    }
+
+#  endif
+
+    return PL_curlocales[index];
+}
+
+#endif  /* Need PL_curlocales[] */
 #ifdef USE_LOCALE
 
 /* So far, the locale strings returned by modern 2008-compliant systems have
@@ -2365,7 +2370,12 @@ S_new_numeric(pTHX_ const char *newnum, bool force)
     /* If not forcing this procedure, and there isn't actually a change from
      * our records, do nothing.  (Our records can be wrong when sync'ing to the
      * locale set up by an external library, hence the 'force' parameter) */
-    if (! force && strEQ(PL_numeric_name, newnum)) {
+    if (   (! force && strEQ(PL_numeric_name, newnum))
+
+#  if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
+        || ! PL_perl_controls_locale
+#  endif
+       ) {
         return;
     }
 
@@ -5936,9 +5946,7 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
     new_ctype("C", false);
 
 #  endif
-#  ifdef USE_PL_CURLOCALES
-
-#    ifdef USE_POSIX_2008_LOCALE
+#  ifdef USE_POSIX_2008_LOCALE
 
     /* Make sure is in the global locale (as this can be called from embedded
      * perls).  */
@@ -5947,27 +5955,33 @@ Perl_init_i18nl10n(pTHX_ int printwarn)
         freelocale(entry_locale);
     }
 
-#    endif
+#if 0
 
     /* Initialize our records. */
+
+#      define do_update_i(i, cur_locale)                                    \
+               emulate_setlocale_i(i, cur_locale,                           \
+                                   RECALCULATE_LC_ALL_ON_FINAL_INTERATION,  \
+                                   __LINE__)
+//#    else
+#endif
+#  endif
+#  ifdef USE_PL_CURLOCALES
+#      define do_update_i(i, cur_locale)                                    \
+            update_PL_curlocales_i(i, cur_locale,                           \
+                                   RECALCULATE_LC_ALL_ON_FINAL_INTERATION)
+
     for (i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
-
-#    ifdef USE_POSIX_2008_LOCALE    /* Temp? */
-
-        (void) emulate_setlocale_i(i, posix_setlocale(categories[i], NULL),
-                                   RECALCULATE_LC_ALL_ON_FINAL_INTERATION,
-                                   __LINE__);
-#    else
-
         POSIX_SETLOCALE_LOCK;
-        PL_curlocales[i] = savepv(posix_setlocale(categories[i], NULL));
+        const char * cur_locale = savepv(posix_setlocale(categories[i], NULL));
         POSIX_SETLOCALE_UNLOCK;
-
-#    endif
-
+        (void) do_update_i(i, cur_locale);
+        Safefree(cur_locale);
     }
+
     //DEBUG_Lv(PerlIO_printf(Perl_debug_log, "Perl_init_i18nl10n: PL_cur_locale_obj is %p\n", PL_cur_locale_obj));
 
+#    undef do_update_i
 #  endif
 
     /* We try each locale in the list until we get one that works, or exhaust
@@ -7859,8 +7873,6 @@ Perl_switch_to_global_locale(pTHX)
 
     DEBUG_L(PerlIO_printf(Perl_debug_log, "Entering switch_to_global; %s\n",
                                           get_LC_ALL_display()));
-    bool perl_controls = false;
-
 #  ifdef USE_THREAD_SAFE_LOCALE
 
    /* In these cases, we use the system state to determine if we are in the
@@ -7868,19 +7880,27 @@ Perl_switch_to_global_locale(pTHX)
 
 #    ifdef USE_POSIX_2008_LOCALE
 
-    perl_controls = (LC_GLOBAL_LOCALE != uselocale((locale_t) 0));
+    bool perl_controls = (LC_GLOBAL_LOCALE != uselocale((locale_t) 0));
 
 #    elif defined(WIN32)
 
+    perl_controls = (_configthreadlocale(0) == _ENABLE_PER_THREAD_LOCALE);
     int config_return = _configthreadlocale(0);
     if (config_return == -1) {
         locale_panic_("_configthreadlocale returned an error");
     }
-    perl_controls = (config_return == _ENABLE_PER_THREAD_LOCALE);
+    bool perl_controls = (config_return == _ENABLE_PER_THREAD_LOCALE);
 
 #    else
 #      error Unexpected Configuration
 #    endif
+#  elif defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+
+    bool perl_controls = PL_perl_controls_locale;
+
+#  else     /*  */
+    bool perl_controls = false;
+
 #  endif
 
     /* No-op if already in global */
@@ -7927,6 +7947,10 @@ Perl_switch_to_global_locale(pTHX)
     POSIX_SETLOCALE_UNLOCK;
 
 #    endif
+#  elif defined(USE_THREAD_SAFE_LOCALE_EMULATION)
+
+    PL_perl_controls_locale = false;
+
 #  endif
 #  ifdef USE_LOCALE_NUMERIC
 
@@ -7991,34 +8015,47 @@ Perl_sync_locale(pTHX)
     return TRUE;
 
 #else
+#  if ! defined(USE_THREAD_SAFE_LOCALE)
 
-    bool was_in_global = TRUE;
+    bool was_in_global = PL_perl_controls_locale;
+    PL_perl_controls_locale = true;
 
-#  ifndef USE_THREAD_SAFE_LOCALE
+#    ifdef USE_PL_CURLOCALES
 
-    PL_perl_controls_locale = TRUE;
+    for (PERL_UINT_FAST8_T i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
+        POSIX_SETLOCALE_LOCK;
+        const char * cur_locale = savepv(posix_setlocale(categories[i], NULL));
+        POSIX_SETLOCALE_UNLOCK;
+        (void) update_PL_curlocales_i(i, cur_locale,
+                                      RECALCULATE_LC_ALL_ON_FINAL_INTERATION);
+        Safefree(cur_locale);
+    }
 
-#  else
+#    endif
+#  else   /* Thread-safe */
+
+    /* Switch to the global locale, and note if we were already there */
+
 #    if defined(WIN32)
 
     int config_return = _configthreadlocale(_DISABLE_PER_THREAD_LOCALE);
     if (config_return == -1) {
         locale_panic_("_configthreadlocale returned an error");
     }
-    was_in_global = (config_return == _DISABLE_PER_THREAD_LOCALE);
+    bool was_in_global = (config_return == _DISABLE_PER_THREAD_LOCALE);
 
-#    elif defined(USE_POSIX_2008_LOCALE)
+#    elif defined(USE_POSIX_2008_LOCALE)    /* Thread-safe POSIX 2008 */
 
-    was_in_global = (LC_GLOBAL_LOCALE == uselocale((locale_t) 0));
+    bool was_in_global = (LC_GLOBAL_LOCALE == uselocale(LC_GLOBAL_LOCALE));
 
 #    else
 #      error Unexpected Configuration
 #    endif
-#  endif    /* USE_THREAD_SAFE_LOCALE */
 
     /* Here, we are in the global locale.  Get and save the values for each
      * category. */
     const char * current_globals[NOMINAL_LC_ALL_INDEX];
+
     for (unsigned i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
         POSIX_SETLOCALE_LOCK;
         current_globals[i] = savepv(stdized_setlocale(categories[i], NULL));
@@ -8027,7 +8064,7 @@ Perl_sync_locale(pTHX)
 
     /* Now we have to convert the current thread to use them */
 
-#  if defined(WIN32)
+#    if defined(WIN32)
 
     /* On Windows, convert to per-thread behavior.  This isn't necessary in
      * POSIX 2008, as the conversion gets done automatically in the loop below.
@@ -8036,14 +8073,16 @@ Perl_sync_locale(pTHX)
         locale_panic_("_configthreadlocale returned an error");
     }
 
-#  endif
+#    endif
 
     for (unsigned i = 0; i < NOMINAL_LC_ALL_INDEX; i++) {
         setlocale_i(i, current_globals[i]);
         Safefree(current_globals[i]);
     }
 
-    /* And update our remaining records.  'true' => force recalculation */
+#  endif
+
+    /* Finally, update our remaining records.  'true' => force recalculation */
     new_LC_ALL(NULL, true);
 
     return was_in_global;
@@ -8132,8 +8171,10 @@ Perl_switch_locale_context()
     }
 
 #  ifdef USE_POSIX_2008_LOCALE
+#    ifdef DEBUGGING
+    if (PL_phase != PERL_PHASE_CONSTRUCT) DEBUG_U(PerlIO_printf(Perl_debug_log, "switch_locale_context: aTHX=%p, phase=%s, obj=%p\n", aTHX, PL_phase_names[PL_phase], PL_cur_locale_obj));
+#    endif
 
-    if (PL_phase != PERL_PHASE_CONSTRUCT)DEBUG_U(PerlIO_printf(Perl_debug_log, "switch_locale_context: aTHX=%p, phase=%s, obj=%p\n", aTHX, PL_phase_names[PL_phase], PL_cur_locale_obj));
 #    ifdef USE_PL_CUR_LC_ALL
     if (PL_phase != PERL_PHASE_CONSTRUCT) DEBUG_U(PerlIO_printf(Perl_debug_log, "locale=%s\n", PL_cur_LC_ALL));
 #    endif
@@ -8160,12 +8201,12 @@ void
 Perl_thread_locale_init(pTHX)
 {
 
-#ifndef USE_THREAD_SAFE_LOCALE
+#if defined(USE_LOCALE)
+#  ifndef USE_THREAD_SAFE_LOCALE
 
     PL_perl_controls_locale = TRUE;
 
-#else
-#  ifdef USE_POSIX_2008_LOCALE
+#  elif defined(USE_POSIX_2008_LOCALE)
 
     /* Called from a thread on startup.
      *
@@ -8188,9 +8229,6 @@ Perl_thread_locale_init(pTHX)
     }
     void_setlocale_c(LC_ALL, "C");
 
-#  endif
-#  ifndef USE_THREAD_SAFE_LOCALE
-    PL_perl_controls_locale = TRUE;
 #  endif
 #endif
 

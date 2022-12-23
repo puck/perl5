@@ -15968,7 +15968,7 @@ perl_clone_using(PerlInterpreter *proto_perl, UV flags,
 
 /* We copy the locale state of the current thread to the new one.  The new one
  * is supposed to start in the C locale (XXX is this inconsistency correct?) but on dangerous systems it is just copied, so as to avoid affecting the parent global state.  This gets much better if emulation is in effect */
-#ifndef USE_THREAD_SAFE_LOCALE
+#if defined(USE_LOCALE) && ! defined(USE_THREAD_SAFE_LOCALE)
     PL_perl_controls_locale = TRUE;
 #endif
 #ifdef USE_PL_CURLOCALES
