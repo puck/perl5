@@ -7884,7 +7884,6 @@ Perl_switch_to_global_locale(pTHX)
 
 #    elif defined(WIN32)
 
-    perl_controls = (_configthreadlocale(0) == _ENABLE_PER_THREAD_LOCALE);
     int config_return = _configthreadlocale(0);
     if (config_return == -1) {
         locale_panic_("_configthreadlocale returned an error");
