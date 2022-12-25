@@ -67,6 +67,7 @@ BEGIN {
     die "PLATFORM must be one of: @PLATFORM\n"
 	unless exists $PLATFORM{$ARGS{PLATFORM}};
 }
+    $|=1;
 
 use constant PLATFORM => $ARGS{PLATFORM};
 
@@ -123,9 +124,7 @@ if ($define{USE_ITHREADS}) {
     }
 }
 
-$define{MULTIPLICITY} ||=
-    $define{USE_ITHREADS} ||
-    $define{PERL_IMPLICIT_CONTEXT} ;
+$define{MULTIPLICITY} ||= $define{PERL_IMPLICIT_CONTEXT} ;
 
 if ($define{USE_ITHREADS} && ! $define{WIN32}) {
     $define{USE_REENTRANT_API} = 1;
@@ -155,7 +154,10 @@ if (! $define{NO_LOCALE}) {
 
 # https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 my $cctype = $ARGS{CCTYPE} =~ s/MSVC//r;
-if ($define{USE_ITHREADS} && ! $define{NO_LOCALE_THREADS}) {
+if (   $define{USE_ITHREADS}
+    && $define{USE_LOCALE}
+    && ! $define{NO_LOCALE_THREADS})
+{
     $define{USE_LOCALE_THREADS} = 1;
 }
 
@@ -169,7 +171,7 @@ if (   $define{HAS_POSIX_2008_LOCALE}
 
 if ($define{USE_LOCALE_THREADS} && ! $define{NO_THREAD_SAFE_LOCALE}) {
     if (    $define{USE_POSIX_2008_LOCALE}
-        || ($define{WIN32} && (   $cctype !~ /\D/ && $cctype >= 80)))
+        || ($define{WIN32} && $cctype !~ /\D/ && $cctype >= 80))
     {
         $define{USE_THREAD_SAFE_LOCALE} = 1;
     }

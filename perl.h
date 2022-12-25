@@ -71,12 +71,12 @@ is used in functions that take a thread context initial parameter.
 #  define HAS_C99 1
 #endif
 
+/* =========================================================================
+ * The defines from here to the following ===== line are unfortunately
+ * duplicated in makedef.pl, and changes here MUST also be made there */
+
 /* See L<perlguts/"The Perl API"> for detailed notes on
  * MULTIPLICITY and PERL_IMPLICIT_SYS */
-
-/* XXX NOTE that from here --> to <-- the same logic is
- * repeated in makedef.pl, so be certain to update
- * both places when editing. */
 
 #ifdef USE_ITHREADS
 #  if !defined(MULTIPLICITY)
@@ -107,7 +107,8 @@ is used in functions that take a thread context initial parameter.
 #   define USE_REENTRANT_API
 #endif
 
-/* <--- here ends the logic shared by perl.h and makedef.pl */
+/* end of makedef.pl logic duplication.  But there are other groups below.
+ * ========================================================================= */
 
 /*
 =for apidoc_section $directives
@@ -1103,6 +1104,9 @@ violations are fatal.
 #  endif
 #endif
 
+/* end of makedef.pl logic duplication.  But there are other groups below.
+ * ========================================================================= */
+
 #ifdef USE_LOCALE
 #   define HAS_SKIP_LOCALE_INIT /* Solely for XS code to test for this
                                    #define */
@@ -1252,6 +1256,9 @@ violations are fatal.
 #    define LC_ALL_INDEX_               PERL_LOCALE_CATEGORIES_COUNT_
 #  endif
 
+/* =========================================================================
+ * The defines from here to the following ===== line are unfortunately
+ * duplicated in makedef.pl, and changes here MUST also be made there */
 
 #  if defined(USE_ITHREADS) && ! defined(NO_LOCALE_THREADS)
 #    define USE_LOCALE_THREADS
@@ -1334,7 +1341,7 @@ violations are fatal.
                                     && defined(USE_THREAD_SAFE_LOCALE)))
 #    define USE_PERL_SWITCH_LOCALE_CONTEXT
 #  endif
-#endif
+#endif  /* End of USE_LOCALE */
 
 /* end of makedef.pl logic duplication
  * ========================================================================= */
