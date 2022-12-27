@@ -1046,9 +1046,10 @@ S_native_query_LC_ALL(pTHX)
                               char);
                         Copy(s,
                              PL_LC_ALL_separator_string,
-                             PL_LC_ALL_separator_string_len + 1, /* Include NUL
-                                                                  */
+                             PL_LC_ALL_separator_string_len,
                              char);
+                         PL_LC_ALL_separator_string
+                                       [PL_LC_ALL_separator_string_len] = '\0';
 
                         gwLOCALE_UNLOCK;
                         break;
