@@ -405,6 +405,11 @@ sub sort_locales ()
 foreach my $locale (@locales) {
     $locale = analyze_locale_name($locale);
 }
+
+# Without a proper codeset, we can't really know how to test.  This should
+# only happen on platforms that lack the ability to determine the codeset.
+@locales = grep { $_->{codeset} ne "" } @locales;
+
 @locales = sort sort_locales @locales;
 print STDERR __FILE__, ": ", __LINE__, ": ", Dumper \@locales if $debug;
 
@@ -597,10 +602,12 @@ sub add_trials($$;$)
         # categories.
         if ($op && defined $op_counts{$op} && $op_counts{$op} >= $thread_count) {
             print STDERR __FILE__, ": ", __LINE__, ": Now have enough tests for $op=$op_counts{$op}\n" if $debug;
-            last ; #if defined $op_counts{$op} && $op_counts{$op} >= $thread_count;
+            last;
         }
     }
 }
+
+use Config;
 
 SKIP: {
     skip("Unsafe locale threads", 1) unless ${^SAFE_LOCALES};
@@ -730,6 +737,7 @@ SKIP: {
     # them.
     my %map_category_name_to_number;
     foreach my $category (@valid_categories) {
+        no warnings 'uninitialized';
         if ($category eq 'LC_ALL') {
             next;   #XXX we don't currently test this separately
         }
@@ -743,7 +751,6 @@ SKIP: {
         $map_category_name_to_number{$category} = $cat_num;
 
         if ($category eq 'LC_COLLATE') {
-        next;
             add_trials('LC_COLLATE',
                        # 'reverse' causes it to be definitely out of order for
                        # the 'sort' to correct
@@ -813,69 +820,63 @@ SKIP: {
             add_trials('LC_CTYPE', 'no warnings "locale";'
                               . ' my $string = join "", map { chr } 0..255;'
                               . ' $string =~ s|(.)|$1=~/[[:xdigit:]]/?1:0|gers');
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_CTYPE', $langinfo_LC_CTYPE);  # unless $debug;;
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
-            add_trials('LC_CTYPE', 'my $string = chr 0x100;'
-                                 . ' utf8::encode($string);'
-                                 . ' POSIX::mblen($string)');
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
-            add_trials('LC_CTYPE', 'my $value; my $str = "\x{100}";'
-                                 . ' utf8::encode($str);'
-                                 . ' POSIX::mbtowc($value, $str); $value;');
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
-            add_trials('LC_CTYPE', 'my $value; POSIX::wctomb($value, 0xFF);'
-                                 . ' $value;');
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
+
+            # In the multibyte functions, the non-reentrant ones can't be made
+            # thread safe
+            if ($Config{'d_mbrlen'} eq 'define') {
+                add_trials('LC_CTYPE', 'my $string = chr 0x100;'
+                                     . ' utf8::encode($string);'
+                                     . ' no warnings "uninitialized";'
+                                     . ' POSIX::mblen(undef);'
+                                     . ' POSIX::mblen($string)');
+            }
+            if ($Config{'d_mbrtowc'} eq 'define') {
+                add_trials('LC_CTYPE', 'my $value; my $str = "\x{100}";'
+                                     . ' utf8::encode($str);'
+                                     . ' no warnings "uninitialized";'
+                                     . ' POSIX::mbtowc(undef, undef);'
+                                     . ' POSIX::mbtowc($value, $str); $value;');
+            }
+            if ($Config{'d_wcrtomb'} eq 'define') {
+                add_trials('LC_CTYPE', 'my $value;'
+                                     . ' no warnings "uninitialized";'
+                                     . ' POSIX::wctomb(undef, undef);'
+                                     . ' POSIX::wctomb($value, 0xFF);'
+                                     . ' $value;');
+            }
+
             add_trials('LC_CTYPE', $case_insensitive_matching_test);
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
-            next;
         }
 
         if ($category eq 'LC_MESSAGES') {
-        next;
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_MESSAGES',
-                       "join \"\n\", map { \$! = \$_; \"\$!\" } ($msg_catalog)");
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
+                     "join \"\n\", map { \$! = \$_; \"\$!\" } ($msg_catalog)");
             add_trials('LC_MESSAGES', $langinfo_LC_MESSAGES);
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             next;
         }
 
         if ($category eq 'LC_MONETARY') {
-        next;
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             #add_trials('LC_MONETARY', "localeconv()->{currency_symbol}") unless $^O =~ /MSWin32/i;
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_MONETARY', $langinfo_LC_MONETARY);
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             next;
         }
 
         if ($category eq 'LC_NUMERIC') {
-        next;
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             #add_trials('LC_NUMERIC', "no warnings; 'uninitialised'; join '|',"
             #                       . " localeconv()->{decimal_point},"
             #                       . " localeconv()->{thousands_sep}");
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_NUMERIC', $langinfo_LC_NUMERIC);
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
 
             # Use a variable to avoid runtime bugs being hidden by constant
             # folding
             add_trials('LC_NUMERIC', 'my $in = 4.2; sprintf("%g", $in)');
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             next;
         }
 
         if ($category eq 'LC_TIME') {
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_TIME', "POSIX::strftime($strftime_args)");
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             add_trials('LC_TIME', $langinfo_LC_TIME);
-            print STDERR __FILE__, ": ", __LINE__, ": Got here\n" if $debug;
             next;
         }
     } # End of creating test cases.
@@ -1322,7 +1323,7 @@ SKIP: {
                         print STDERR \"\\nthread \", threads->tid(),
                                      \" failed in iteration \$iteration\",
                                      \" for locale \$test->{locale_name}\",
-                                     \" codeset \$test->{codeset}\",
+                                     \" codeset '\$test->{codeset}'\",
                                      \" \$category_name\",
                                      \" op='\$test->{op}'\",
                                      \" after getting \",

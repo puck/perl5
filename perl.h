@@ -1254,6 +1254,7 @@ violations are fatal.
 #  define PERL_LOCALE_CATEGORIES_COUNT_ PERL_DUMMY_TOD_ + 1
 #  ifdef LC_ALL
 #    define LC_ALL_INDEX_               PERL_LOCALE_CATEGORIES_COUNT_
+#    define PERL_LOCALE_CATEGORIES_ALL_COUNT_  PERL_LOCALE_CATEGORIES_COUNT_ + 1
 #  endif
 
 /* =========================================================================
@@ -7183,11 +7184,7 @@ the plain locale pragma without a parameter (S<C<use locale>>) is in effect.
                     } STMT_END
 #  endif
 #  ifdef USE_THREAD_SAFE_LOCALE_EMULATION
-#    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_                       \
-                                STMT_START {                                \
-                                    /*Safefree(PL_LC_ALL_separator_string);*/   \
-                                    /*PL_LC_ALL_separator_string = NULL;*/      \
-                                } STMT_END
+#      define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_  NOOP
 #  else
 #    define LOCALE_TERM_THREAD_SAFE_LOCALE_EMULATION_  NOOP
 #  endif
